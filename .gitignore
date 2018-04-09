@@ -35,10 +35,14 @@ bld/
 *.VisualState.xml
 TestResult.xml
 
+Vulkan Fish Demo.vcxproj.filters
+Vulkan Fish Demo.vcxproj
+
 # Build Results of an ATL Project
 [Dd]ebugPS/
 [Rr]eleasePS/
 dlldata.c
+Debug/
 
 # DNX
 project.lock.json
