@@ -13,4 +13,25 @@ namespace VulkanEngineApplication
 	struct UniformBuffer {
 		glm::mat4 projView;
 	};
+
+	struct VulkanData {
+		//////////////////////////////////////////////////
+		int32_t width, height;
+		//////////////////////////////////////////////////
+		VkPhysicalDevice physicalDevice;
+		VkDevice device;
+		//////////////////////////////////////////////////
+		std::vector<VkQueue> queue;
+		int32_t queueFamilyIndex;
+		//////////////////////////////////////////////////
+		VkSurfaceKHR windowSurface;
+		VkSwapchainKHR swapchain;
+		VkFormat mSwapChainImageFormat;
+		std::vector<VkImage> swapchainImage;
+		std::vector<VkImageView> swapchainImageView;
+		//////////////////////////////////////////////////
+		std::vector<VkFramebuffer> swapchainFramebuffer;
+		VkRenderPass swapchainRenderpass;
+		//////////////////////////////////////////////////
+	};
 }

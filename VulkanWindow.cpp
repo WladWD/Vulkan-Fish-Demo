@@ -1,18 +1,15 @@
 #include "VulkanWindow.h"
 
-VulkanEngineApplication::VulkanWindow::VulkanWindow(int32_t width, int32_t height, const char * sTitle) {
-	initWindow(width, height, sTitle);
-	initVulkan();
-
-#ifdef _DEBUG
-	printApplicationInfo();
-#endif
-
+VulkanEngineApplication::VulkanWindow::VulkanWindow(JNIEnv *env, jobject rmng) {
+	//init engine data;
+	engine = new Engine::VulkanEngine(&vulkanData, env, rmng);
 }
 
 VulkanEngineApplication::VulkanWindow::~VulkanWindow() {
 	
-	vkDestroySurfaceKHR(vulkanInstance, windowSurface, nullptr);
+	delete engine;
+
+	vkDestroySurfaceKHR(vulkanInstance, vulkanData.windowSurface, nullptr);
 
 	destroyDebugReportCallbackEXT(vulkanInstance, mCallbackDebugReport, nullptr);
 
@@ -21,6 +18,48 @@ VulkanEngineApplication::VulkanWindow::~VulkanWindow() {
 	glfwDestroyWindow(mWindow);
 
 	glfwTerminate();
+}
+
+bool VulkanEngineApplication::VulkanWindow::windowShoudClose(void) {
+	return !!glfwWindowShouldClose(mWindow);
+}
+
+void VulkanEngineApplication::VulkanWindow::initialize(uint32_t width, uint32_t height) {
+
+	vulkanData.height = height;
+	vulkanData.width = width;
+
+
+	initWindow(width, height, "Vulkan Application");
+	initVulkan();
+
+#ifdef _DEBUG
+	printApplicationInfo();
+#endif
+
+	engine->initialize();
+}
+
+void VulkanEngineApplication::VulkanWindow::resize(uint32_t width, uint32_t height) {
+	vulkanData.height = height;
+	vulkanData.width = width;
+
+	engine->resize();
+}
+
+void VulkanEngineApplication::VulkanWindow::pause(void) {
+	//stop timer and other object
+
+	engine->pause();
+}
+
+void VulkanEngineApplication::VulkanWindow::resume(void) {
+	//resume timer and other object
+	engine->resume();
+}
+
+void VulkanEngineApplication::VulkanWindow::draw() {
+	engine->draw();
 }
 
 void VulkanEngineApplication::VulkanWindow::initWindow(int32_t width, int32_t height, const char * sTitle) {
@@ -44,7 +83,10 @@ void VulkanEngineApplication::VulkanWindow::initVulkan(void) {
 	setupDebugReport();
 	createWindowSurface();
 	createDevice();
-	createSwapShain();
+	createSwapchain();
+	createSwapchainImageView();
+	createRenderPass();
+	createFramebuffer();
 }
 
 void VulkanEngineApplication::VulkanWindow::createInstance(void) {
@@ -106,8 +148,8 @@ void VulkanEngineApplication::VulkanWindow::selectPhisicalDevice(void) {
 		for (const auto &device : phisicalDevices) {
 			int32_t queueFamilyIndex = -1;
 			if (isDeviceSuitable(device, queueFamilyIndex)) {
-				physicalDevice = device;
-				this->queueFamilyIndex = queueFamilyIndex;
+				vulkanData.physicalDevice = device;
+				this->vulkanData.queueFamilyIndex = queueFamilyIndex;
 				break;
 			}
 		}
@@ -148,7 +190,7 @@ int32_t VulkanEngineApplication::VulkanWindow::findQueueFamily(VkPhysicalDevice 
 	for (const auto &mQueueFamily : mQueueFamilyProperties) {
 		VkBool32 bPhysicalDeviceSurfaceSupport = false;
 
-		vkGetPhysicalDeviceSurfaceSupportKHR(mDevice, mCurrentQueueFamilyIndex, windowSurface, &bPhysicalDeviceSurfaceSupport);
+		vkGetPhysicalDeviceSurfaceSupportKHR(mDevice, mCurrentQueueFamilyIndex, vulkanData.windowSurface, &bPhysicalDeviceSurfaceSupport);
 
 		if (bPhysicalDeviceSurfaceSupport &&
 			mQueueFamily.queueCount > 0 &&
@@ -205,7 +247,7 @@ bool VulkanEngineApplication::VulkanWindow::isDeviceSuitable(VkPhysicalDevice mD
 void VulkanEngineApplication::VulkanWindow::createWindowSurface(void) {
 #ifndef _ANDROID_
 
-	if (glfwCreateWindowSurface(vulkanInstance, mWindow, nullptr, &windowSurface) != VK_SUCCESS) {
+	if (glfwCreateWindowSurface(vulkanInstance, mWindow, nullptr, &vulkanData.windowSurface) != VK_SUCCESS) {
 		throw std::runtime_error("[Error] Failed to create window surface!");
 	}
 
@@ -223,7 +265,7 @@ void VulkanEngineApplication::VulkanWindow::createDevice(void) {
 	deviceQueueInfo.pNext = nullptr;
 	deviceQueueInfo.pQueuePriorities = queuePriority;
 	deviceQueueInfo.queueCount = 1;
-	deviceQueueInfo.queueFamilyIndex = queueFamilyIndex;
+	deviceQueueInfo.queueFamilyIndex = vulkanData.queueFamilyIndex;
 
 	VkPhysicalDeviceFeatures deviceFeature = {};
 	deviceFeature.samplerAnisotropy = VK_TRUE;
@@ -249,31 +291,32 @@ void VulkanEngineApplication::VulkanWindow::createDevice(void) {
 		deviceInfo.ppEnabledLayerNames = nullptr;
 	}
 
-	if (vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device) != VK_SUCCESS) {
+	if (vkCreateDevice(vulkanData.physicalDevice, &deviceInfo, nullptr, &vulkanData.device) != VK_SUCCESS) {
 		throw std::runtime_error("[ERROR] Failed to create device");
 	}
 
-	vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue[0]);
+	vulkanData.queue.resize(1);
+	vkGetDeviceQueue(vulkanData.device, vulkanData.queueFamilyIndex, 0, &vulkanData.queue[0]);
 }
 
 VulkanEngineApplication::SwapChainSupportDetails VulkanEngineApplication::VulkanWindow::querySwapChainSupport(VkPhysicalDevice mDevice)
 {
 	VulkanEngineApplication::SwapChainSupportDetails mSwapChainProperties;
 
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mDevice, windowSurface, &mSwapChainProperties.mCapabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mDevice, vulkanData.windowSurface, &mSwapChainProperties.mCapabilities);
 
 	uint32_t mFormatCount = 0;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(mDevice, windowSurface, &mFormatCount, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(mDevice, vulkanData.windowSurface, &mFormatCount, nullptr);
 	if (mFormatCount) {
 		mSwapChainProperties.mFormats.resize(mFormatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(mDevice, windowSurface, &mFormatCount, mSwapChainProperties.mFormats.data());
+		vkGetPhysicalDeviceSurfaceFormatsKHR(mDevice, vulkanData.windowSurface, &mFormatCount, mSwapChainProperties.mFormats.data());
 	}
 
 	uint32_t mPresentModeCount = 0;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(mDevice, windowSurface, &mPresentModeCount, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(mDevice, vulkanData.windowSurface, &mPresentModeCount, nullptr);
 	if (mPresentModeCount) {
 		mSwapChainProperties.mPresentModes.resize(mPresentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(mDevice, windowSurface, &mPresentModeCount, mSwapChainProperties.mPresentModes.data());
+		vkGetPhysicalDeviceSurfacePresentModesKHR(mDevice, vulkanData.windowSurface, &mPresentModeCount, mSwapChainProperties.mPresentModes.data());
 	}
 
 	return mSwapChainProperties;
@@ -323,8 +366,8 @@ VkExtent2D VulkanEngineApplication::VulkanWindow::chooseSwapExtent(const VkSurfa
 	}
 }
 
-void VulkanEngineApplication::VulkanWindow::createSwapShain(void) {
-	SwapChainSupportDetails mSwapChainProperties = querySwapChainSupport(physicalDevice);
+void VulkanEngineApplication::VulkanWindow::createSwapchain(void) {
+	SwapChainSupportDetails mSwapChainProperties = querySwapChainSupport(vulkanData.physicalDevice);
 
 	VkSurfaceFormatKHR mSurfaceFormat = chooseSwapSurfaceFormat(mSwapChainProperties.mFormats);
 	VkPresentModeKHR mSurfacePresentMode = choosePresentMode(mSwapChainProperties.mPresentModes);
@@ -337,7 +380,7 @@ void VulkanEngineApplication::VulkanWindow::createSwapShain(void) {
 
 	VkSwapchainCreateInfoKHR mSwapChainCreateStruct = {};
 	mSwapChainCreateStruct.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	mSwapChainCreateStruct.surface = windowSurface;
+	mSwapChainCreateStruct.surface = vulkanData.windowSurface;
 	mSwapChainCreateStruct.minImageCount = mImageCount;
 	mSwapChainCreateStruct.imageFormat = mSurfaceFormat.format;
 	mSwapChainCreateStruct.imageColorSpace = mSurfaceFormat.colorSpace;
@@ -355,16 +398,130 @@ void VulkanEngineApplication::VulkanWindow::createSwapShain(void) {
 	mSwapChainCreateStruct.clipped = VK_TRUE;
 	mSwapChainCreateStruct.oldSwapchain = VK_NULL_HANDLE;
 
-	if (vkCreateSwapchainKHR(device, &mSwapChainCreateStruct, nullptr, &swapchain) != VK_SUCCESS) {
+	if (vkCreateSwapchainKHR(vulkanData.device, &mSwapChainCreateStruct, nullptr, &vulkanData.swapchain) != VK_SUCCESS) {
 		throw std::runtime_error("[DGB]\tFailed to create swap chain!");
 	}
 
-	vkGetSwapchainImagesKHR(device, swapchain, &mImageCount, nullptr);
-	swapchainImage.resize(mImageCount);
-	vkGetSwapchainImagesKHR(device, swapchain, &mImageCount, swapchainImage.data());
+	vkGetSwapchainImagesKHR(vulkanData.device, vulkanData.swapchain, &mImageCount, nullptr);
+	vulkanData.swapchainImage.resize(mImageCount);
+	vkGetSwapchainImagesKHR(vulkanData.device, vulkanData.swapchain, &mImageCount, vulkanData.swapchainImage.data());
 
-	mSwapChainImageFormat = mSwapChainCreateStruct.imageFormat;
+	vulkanData.mSwapChainImageFormat = mSwapChainCreateStruct.imageFormat;
 	mSwapChainImageExtent = mSwapChainCreateStruct.imageExtent;
+}
+
+void VulkanEngineApplication::VulkanWindow::createSwapchainImageView(void) {
+	vulkanData.swapchainImageView.resize(vulkanData.swapchainImage.size());
+	for (size_t i = 0; i < vulkanData.swapchainImage.size(); ++i) {
+
+		VkImageViewCreateInfo imageViewInfo = { };
+		imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		imageViewInfo.pNext = nullptr;
+		imageViewInfo.flags = 0;
+		imageViewInfo.format = vulkanData.mSwapChainImageFormat;
+		imageViewInfo.image = vulkanData.swapchainImage[i];
+		imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		
+		imageViewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		
+		imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageViewInfo.subresourceRange.baseArrayLayer = 0;
+		imageViewInfo.subresourceRange.baseMipLevel = 0;
+		imageViewInfo.subresourceRange.layerCount = 1;
+		imageViewInfo.subresourceRange.levelCount = 1;
+
+		if (vkCreateImageView(vulkanData.device, &imageViewInfo, nullptr, &vulkanData.swapchainImageView[i]) != VK_SUCCESS) {
+			throw std::runtime_error("[DBG] Failed to create image view");
+		}
+	}
+}
+
+void VulkanEngineApplication::VulkanWindow::createRenderPass(void) {
+	/*VkAttachmentDescription depthAttachment = {};
+	depthAttachment.format = findDepthFormat();
+	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;*/
+
+	VkAttachmentDescription mAttachmentDescription = {};
+	mAttachmentDescription.format = vulkanData.mSwapChainImageFormat;
+	mAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+	mAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	mAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	mAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	mAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	mAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	mAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+	//VkAttachmentReference depthAttachmentReference = {};
+	//depthAttachmentReference.attachment = 1;
+	//depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference mColorAttachmentReference = {};
+	mColorAttachmentReference.attachment = 0;
+	mColorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription mSubpassStruct = {};
+	mSubpassStruct.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	mSubpassStruct.colorAttachmentCount = 1;
+	mSubpassStruct.pColorAttachments = &mColorAttachmentReference;
+	mSubpassStruct.pDepthStencilAttachment = nullptr;//&depthAttachmentReference;
+
+	std::array<VkAttachmentDescription, 1> attachment = { mAttachmentDescription };// , depthAttachment };
+
+	VkRenderPassCreateInfo mRenderPassCreateInfoStruct = {};
+	mRenderPassCreateInfoStruct.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	mRenderPassCreateInfoStruct.attachmentCount = static_cast<uint32_t>(attachment.size());
+	mRenderPassCreateInfoStruct.pAttachments = attachment.data();
+	mRenderPassCreateInfoStruct.subpassCount = 1;
+	mRenderPassCreateInfoStruct.pSubpasses = &mSubpassStruct;
+
+	VkSubpassDependency mDependency = {};
+	mDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	mDependency.dstSubpass = 0;
+	mDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;//VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+	mDependency.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	mDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	mDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+
+	mRenderPassCreateInfoStruct.dependencyCount = 1;
+	mRenderPassCreateInfoStruct.pDependencies = &mDependency;
+
+	if (vkCreateRenderPass(vulkanData.device, &mRenderPassCreateInfoStruct, nullptr, &vulkanData.swapchainRenderpass) != VK_SUCCESS) {
+		throw std::runtime_error("[DBG]\tFailed to create render pass!");
+	}
+}
+
+void VulkanEngineApplication::VulkanWindow::createFramebuffer(void) {
+	vulkanData.swapchainFramebuffer.resize(vulkanData.swapchainImage.size());
+
+	for (size_t i = 0; i < vulkanData.swapchainFramebuffer.size(); ++i)
+	{
+		std::array<VkImageView, 1> mAttachments = {
+			vulkanData.swapchainImageView[i]
+			//depthImageView
+		};
+
+		VkFramebufferCreateInfo mFramebufferCreateInfoStruct = {};
+		mFramebufferCreateInfoStruct.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		mFramebufferCreateInfoStruct.renderPass = vulkanData.swapchainRenderpass;
+		mFramebufferCreateInfoStruct.attachmentCount = static_cast<uint32_t>(mAttachments.size());
+		mFramebufferCreateInfoStruct.pAttachments = mAttachments.data();
+		mFramebufferCreateInfoStruct.height = mSwapChainImageExtent.height;
+		mFramebufferCreateInfoStruct.width = mSwapChainImageExtent.width;
+		mFramebufferCreateInfoStruct.layers = 1;
+
+		if (vkCreateFramebuffer(vulkanData.device, &mFramebufferCreateInfoStruct, nullptr, &vulkanData.swapchainFramebuffer[i]) != VK_SUCCESS) {
+			throw std::runtime_error("[DBG]\tFailed to create framebuffer!");
+		}
+	}
 }
 
 VkResult VulkanEngineApplication::VulkanWindow::createDebugReportCallbackEXT(VkInstance mxInstance,
@@ -485,14 +642,8 @@ void VulkanEngineApplication::VulkanWindow::printInstanceValidationLayerInfo(voi
 	std::cout << std::endl;
 }
 
-void VulkanEngineApplication::VulkanWindow::printDeviceValidationLayerInfo(void)
-{
+void VulkanEngineApplication::VulkanWindow::printDeviceValidationLayerInfo(void) {
 }
-
-
-void VulkanEngineApplication::VulkanWindow::run() {
-}
-
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanEngineApplication::VulkanWindow::debugCallback(
 	VkDebugReportFlagsEXT flags,

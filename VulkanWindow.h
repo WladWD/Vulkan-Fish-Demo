@@ -1,5 +1,4 @@
 #include "VulkanEngine.h"
-#include "InitStruct.h"
 #include <iostream>
 #pragma once
 
@@ -37,23 +36,27 @@ namespace VulkanEngineApplication
 		//GLFW DATA
 		GLFWwindow *mWindow;
 		/////////////////////////////////////////////////////////////////////////////////////
+		Engine::VulkanEngine *engine;
+		/////////////////////////////////////////////////////////////////////////////////////
 		//Android DATA
 
 		/////////////////////////////////////////////////////////////////////////////////////
 		//Vulkan DATA
 		/////////////////////////////////////////////////////////////////////////////////////
 		//Surface and Swapchain 
-		VkSurfaceKHR windowSurface;
+		/*VkSurfaceKHR windowSurface;
 		VkSwapchainKHR swapchain;
 		std::vector<VkImage> swapchainImage;
-		VkFormat mSwapChainImageFormat;
+		std::vector<VkImageView> swapchainImageView;*/
+		//VkFormat mSwapChainImageFormat;
 		VkExtent2D mSwapChainImageExtent;
 		/////////////////////////////////////////////////////////////////////////////////////
-
-		VkPhysicalDevice physicalDevice;
+		/*VkPhysicalDevice physicalDevice;
 		VkDevice device;
-		VkQueue queue[1];
-		int32_t queueFamilyIndex;
+		std::vector<VkQueue> queue;
+		int32_t queueFamilyIndex;*/
+		/////////////////////////////////////////////////////////////////////////////////////
+		VulkanEngineApplication::VulkanData vulkanData;
 		/////////////////////////////////////////////////////////////////////////////////////
 		static void OnWindowResize(GLFWwindow *mWindow, int width, int height);
 		/////////////////////////////////////////////////////////////////////////////////////
@@ -107,13 +110,26 @@ namespace VulkanEngineApplication
 		void createInstance(void);
 		void createWindowSurface(void);
 		void createDevice(void);
-		void createSwapShain(void);
+		void createSwapchain(void);
+		void createSwapchainImageView(void);
+		void createRenderPass(void);
+		void createFramebuffer(void);
 		/////////////////////////////////////////////////////////////////////////////////////
 	public:
-		VulkanWindow(int32_t width, int32_t height, const char *sTitle = "Vulkan");
+		VulkanWindow(JNIEnv *env, jobject rmng);
 		~VulkanWindow();
+		/////////////////////////////////////////////////////////////////////////////////////
+		//Desctop only
+		bool windowShoudClose(void);
+		/////////////////////////////////////////////////////////////////////////////////////
+		void initialize(uint32_t width, uint32_t height);
+		void resize(uint32_t width, uint32_t height);
 
-		void run();
+		void pause(void);
+		void resume(void);
+
+		void draw(void);
+		/////////////////////////////////////////////////////////////////////////////////////
 	};
 }
 

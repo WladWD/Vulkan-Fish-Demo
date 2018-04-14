@@ -4,6 +4,10 @@
 //Desktop Init
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
+#define JNIEnv unsigned char
+#define jobject int
+
 #else 
 //Android Init
 
