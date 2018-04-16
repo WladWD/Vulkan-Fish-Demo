@@ -7,8 +7,6 @@ namespace VulkanEngineApplication
 	class VulkanWindow 
 	{
 		/////////////////////////////////////////////////////////////////////////////////////
-		VkInstance vulkanInstance;
-		/////////////////////////////////////////////////////////////////////////////////////
 		//Validation Layer
 		std::vector<const char *> deviceValidationLayer;
 		std::vector<const char *> instanceValidationLayer = {
@@ -33,47 +31,20 @@ namespace VulkanEngineApplication
 			VK_KHR_SURFACE_EXTENSION_NAME
 		};
 		/////////////////////////////////////////////////////////////////////////////////////
-		//GLFW DATA
-		GLFWwindow *mWindow;
-		/////////////////////////////////////////////////////////////////////////////////////
 		Engine::VulkanEngine *engine;
-		/////////////////////////////////////////////////////////////////////////////////////
-		//Android DATA
-
-		/////////////////////////////////////////////////////////////////////////////////////
-		//Vulkan DATA
-		/////////////////////////////////////////////////////////////////////////////////////
-		//Surface and Swapchain 
-		/*VkSurfaceKHR windowSurface;
-		VkSwapchainKHR swapchain;
-		std::vector<VkImage> swapchainImage;
-		std::vector<VkImageView> swapchainImageView;*/
-		//VkFormat mSwapChainImageFormat;
-		VkExtent2D mSwapChainImageExtent;
-		/////////////////////////////////////////////////////////////////////////////////////
-		/*VkPhysicalDevice physicalDevice;
-		VkDevice device;
-		std::vector<VkQueue> queue;
-		int32_t queueFamilyIndex;*/
 		/////////////////////////////////////////////////////////////////////////////////////
 		VulkanEngineApplication::VulkanData vulkanData;
 		/////////////////////////////////////////////////////////////////////////////////////
-		static void OnWindowResize(GLFWwindow *mWindow, int width, int height);
-		/////////////////////////////////////////////////////////////////////////////////////
 		//Print Function
 		void printApplicationInfo(void);
-
 		void printInstanceExtensionInfo(void);
 		void printDeviceExtensionInfo(void);
-
 		void printPhisicalDevices(void);
-
 		void printInstanceValidationLayerInfo(void);
 		void printDeviceValidationLayerInfo(void);
 		/////////////////////////////////////////////////////////////////////////////////////
 		//Check Function
 		bool checkValidationSupport(void);
-		void addInstanceRequiredExtension(void);
 		void selectPhisicalDevice(void);
 		bool isDeviceSuitable(VkPhysicalDevice mDevice, int32_t &mDeviceQueueFamilyIndex);
 		int32_t findQueueFamily(VkPhysicalDevice mDevice);
@@ -84,7 +55,6 @@ namespace VulkanEngineApplication
 		VkPresentModeKHR choosePresentMode(const std::vector<VkPresentModeKHR> &mAvailablePresentModes);
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &mCapabilities);
 		/////////////////////////////////////////////////////////////////////////////////////
-		void initWindow(int32_t width, int32_t height, const char *sTitle = "Vulkan");
 		void initVulkan(void);
 		/////////////////////////////////////////////////////////////////////////////////////
 		//Debug Report Function
@@ -107,27 +77,30 @@ namespace VulkanEngineApplication
 			void *userData
 		);
 		/////////////////////////////////////////////////////////////////////////////////////
-		void createInstance(void);
-		void createWindowSurface(void);
 		void createDevice(void);
 		void createSwapchain(void);
 		void createSwapchainImageView(void);
 		void createRenderPass(void);
 		void createFramebuffer(void);
+		void createCommandPool(void);
+		void createCommandBuffer(void);
+		void createSemaphore(void);
 		/////////////////////////////////////////////////////////////////////////////////////
 	public:
-		VulkanWindow(JNIEnv *env, jobject rmng);
+		VulkanWindow(void);
 		~VulkanWindow();
 		/////////////////////////////////////////////////////////////////////////////////////
-		//Desctop only
-		bool windowShoudClose(void);
+		void createInstance(void);
+		void initialize(void);
+		void addInstanceRequiredExtension(const char *extensionName);
 		/////////////////////////////////////////////////////////////////////////////////////
-		void initialize(uint32_t width, uint32_t height);
-		void resize(uint32_t width, uint32_t height);
-
+		const VulkanEngineApplication::VulkanData *getVulkanData();
+		/////////////////////////////////////////////////////////////////////////////////////
+		void resize(void);
+		/////////////////////////////////////////////////////////////////////////////////////
 		void pause(void);
 		void resume(void);
-
+		/////////////////////////////////////////////////////////////////////////////////////
 		void draw(void);
 		/////////////////////////////////////////////////////////////////////////////////////
 	};

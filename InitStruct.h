@@ -16,8 +16,9 @@ namespace VulkanEngineApplication
 
 	struct VulkanData {
 		//////////////////////////////////////////////////
-		int32_t width, height;
+		uint32_t mImageIndex;
 		//////////////////////////////////////////////////
+		VkInstance vulkanInstance;
 		VkPhysicalDevice physicalDevice;
 		VkDevice device;
 		//////////////////////////////////////////////////
@@ -27,11 +28,18 @@ namespace VulkanEngineApplication
 		VkSurfaceKHR windowSurface;
 		VkSwapchainKHR swapchain;
 		VkFormat mSwapChainImageFormat;
+		VkExtent2D mSwapChainImageExtent;
+		//////////////////////////////////////////////////
 		std::vector<VkImage> swapchainImage;
 		std::vector<VkImageView> swapchainImageView;
 		//////////////////////////////////////////////////
 		std::vector<VkFramebuffer> swapchainFramebuffer;
 		VkRenderPass swapchainRenderpass;
+		//////////////////////////////////////////////////
+		VkSemaphore imageAvailable, renderFinish;
+		//////////////////////////////////////////////////
+		std::vector<VkCommandBuffer> commandBuffer;
+		VkCommandPool commandPool;
 		//////////////////////////////////////////////////
 	};
 }

@@ -55,8 +55,8 @@ void Engine::DrawImage::draw(VkCommandBuffer commandBuffer, int32_t frameIdx) {
 	mRenderPassBeginInfo.renderPass = vulkanData->swapchainRenderpass;
 	mRenderPassBeginInfo.framebuffer = vulkanData->swapchainFramebuffer[frameIdx];
 	mRenderPassBeginInfo.renderArea.offset = { 0, 0 };
-	mRenderPassBeginInfo.renderArea.extent.width = vulkanData->width;
-	mRenderPassBeginInfo.renderArea.extent.height = vulkanData->height;
+	mRenderPassBeginInfo.renderArea.extent.width = vulkanData->mSwapChainImageExtent.width;
+	mRenderPassBeginInfo.renderArea.extent.height = vulkanData->mSwapChainImageExtent.height;
 
 	std::array<VkClearValue, 1> mClearValue;
 	mClearValue[0].color = { 1.0f, 1.0f, 0.0f, 1.0f };

@@ -1,48 +1,35 @@
 #include "VulkanWindow.h"
 
-VulkanEngineApplication::VulkanWindow::VulkanWindow(JNIEnv *env, jobject rmng) {
-	//init engine data;
-	engine = new Engine::VulkanEngine(&vulkanData, env, rmng);
+VulkanEngineApplication::VulkanWindow::VulkanWindow(void) {
+	engine = new Engine::VulkanEngine(&vulkanData);
 }
 
 VulkanEngineApplication::VulkanWindow::~VulkanWindow() {
 	
 	delete engine;
 
-	vkDestroySurfaceKHR(vulkanInstance, vulkanData.windowSurface, nullptr);
+	vkDestroySurfaceKHR(vulkanData.vulkanInstance, vulkanData.windowSurface, nullptr);
 
-	destroyDebugReportCallbackEXT(vulkanInstance, mCallbackDebugReport, nullptr);
+	destroyDebugReportCallbackEXT(vulkanData.vulkanInstance, mCallbackDebugReport, nullptr);
 
-	vkDestroyInstance(vulkanInstance, nullptr);
-
-	glfwDestroyWindow(mWindow);
-
-	glfwTerminate();
+	vkDestroyInstance(vulkanData.vulkanInstance, nullptr);
 }
 
-bool VulkanEngineApplication::VulkanWindow::windowShoudClose(void) {
-	return !!glfwWindowShouldClose(mWindow);
+const VulkanEngineApplication::VulkanData * VulkanEngineApplication::VulkanWindow::getVulkanData() {
+	return &vulkanData;
 }
 
-void VulkanEngineApplication::VulkanWindow::initialize(uint32_t width, uint32_t height) {
-
-	vulkanData.height = height;
-	vulkanData.width = width;
-
-
-	initWindow(width, height, "Vulkan Application");
+void VulkanEngineApplication::VulkanWindow::initialize(void) {
 	initVulkan();
+	engine->initialize();
 
 #ifdef _DEBUG
 	printApplicationInfo();
 #endif
-
-	engine->initialize();
 }
 
-void VulkanEngineApplication::VulkanWindow::resize(uint32_t width, uint32_t height) {
-	vulkanData.height = height;
-	vulkanData.width = width;
+void VulkanEngineApplication::VulkanWindow::resize(void) {
+	//resize swap chain
 
 	engine->resize();
 }
@@ -59,34 +46,71 @@ void VulkanEngineApplication::VulkanWindow::resume(void) {
 }
 
 void VulkanEngineApplication::VulkanWindow::draw() {
+
+	vkQueueWaitIdle(vulkanData.queue[0]);
+
+	VkResult mResult = vkAcquireNextImageKHR(vulkanData.device, vulkanData.swapchain, std::numeric_limits<uint64_t>::max(), vulkanData.imageAvailable, VK_NULL_HANDLE, &vulkanData.mImageIndex);
+
+	if (mResult == VK_ERROR_OUT_OF_DATE_KHR) {
+		resize();
+		return;
+	}
+	else if (mResult != VK_SUCCESS && mResult != VK_SUBOPTIMAL_KHR) {
+		throw std::runtime_error("[DBG]\tFailed to aquire swap chain images!");
+	}
+	///////////////////////////////////////////////////////////////////////////////////////
+	vkResetCommandBuffer(vulkanData.commandBuffer[vulkanData.mImageIndex], 0);
+	///////////////////////////////////////////////////////////////////////////////////////
+	// Drawing
 	engine->draw();
-}
+	///////////////////////////////////////////////////////////////////////////////////////
 
-void VulkanEngineApplication::VulkanWindow::initWindow(int32_t width, int32_t height, const char * sTitle) {
+	VkSubmitInfo mSubmitInfo = {};
+	mSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-#ifndef _ANDROID_
+	VkSemaphore mWaitSemaphore[] = { vulkanData.imageAvailable };
+	VkPipelineStageFlags mWaitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+	mSubmitInfo.waitSemaphoreCount = 1;
+	mSubmitInfo.pWaitSemaphores = mWaitSemaphore;
+	mSubmitInfo.pWaitDstStageMask = mWaitStages;
+	mSubmitInfo.commandBufferCount = 1;
+	mSubmitInfo.pCommandBuffers = &vulkanData.commandBuffer[vulkanData.mImageIndex];
 
-	mWindow = glfwCreateWindow(width, height, sTitle, nullptr, nullptr);
+	VkSemaphore mSigmalSemaphores[] = { vulkanData.renderFinish };
+	mSubmitInfo.pSignalSemaphores = mSigmalSemaphores;
+	mSubmitInfo.signalSemaphoreCount = 1;
 
-	glfwSetWindowUserPointer(mWindow, this);
-	glfwSetWindowSizeCallback(mWindow, OnWindowResize);
+	VkSwapchainKHR mSwapChains[] = { vulkanData.swapchain };
 
-#endif
+	VkPresentInfoKHR mPresentInfo = {};
+	mPresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	mPresentInfo.waitSemaphoreCount = 1;
+	mPresentInfo.pWaitSemaphores = mSigmalSemaphores;
+	mPresentInfo.swapchainCount = 1;
+	mPresentInfo.pSwapchains = mSwapChains;
+	mPresentInfo.pImageIndices = &vulkanData.mImageIndex;
+	mPresentInfo.pResults = nullptr;
+
+	VkResult error = vkQueueSubmit(vulkanData.queue[0], 1, &mSubmitInfo, VK_NULL_HANDLE);
+	if (error != VK_SUCCESS) {
+		throw std::runtime_error("[DGB]\tFailed to submit draw command to buffer!");
+	}
+
+	vkQueuePresentKHR(vulkanData.queue[0], &mPresentInfo);
 }
 
 void VulkanEngineApplication::VulkanWindow::initVulkan(void) {
-	createInstance();
+	
 	setupDebugReport();
-	createWindowSurface();
 	createDevice();
 	createSwapchain();
 	createSwapchainImageView();
 	createRenderPass();
 	createFramebuffer();
+	createCommandPool();
+	createCommandBuffer();
+	createSemaphore();
 }
 
 void VulkanEngineApplication::VulkanWindow::createInstance(void) {
@@ -95,7 +119,7 @@ void VulkanEngineApplication::VulkanWindow::createInstance(void) {
 	appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 1);
-	appInfo.pApplicationName = "FishDemo";
+	appInfo.pApplicationName = "VulkanDemo";
 	appInfo.pEngineName = "RGBEngine";
 	appInfo.pNext = nullptr;
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -115,36 +139,29 @@ void VulkanEngineApplication::VulkanWindow::createInstance(void) {
 		instanceInfo.ppEnabledLayerNames = nullptr;
 	}
 
-	addInstanceRequiredExtension();
+	if (enableInstanceValidationLayer) {
+		instanceExtension.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+	}
+
 	instanceInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtension.size());
 	instanceInfo.ppEnabledExtensionNames = instanceExtension.data();
 
-	if (vkCreateInstance(&instanceInfo, nullptr, &vulkanInstance) != VK_SUCCESS) {
+	if (vkCreateInstance(&instanceInfo, nullptr, &vulkanData.vulkanInstance) != VK_SUCCESS) {
 		throw std::runtime_error("[Error] Failed create instace!");
 	}
 }
 
-void VulkanEngineApplication::VulkanWindow::addInstanceRequiredExtension(void) {
-
-	uint32_t glfwExtensionCount = 0;
-	const char **glfwExtension;
-
-	glfwExtension = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-	for (uint32_t i = 0; i < glfwExtensionCount; ++i)
-		instanceExtension.push_back(glfwExtension[i]);
-
-	if (enableInstanceValidationLayer)
-		instanceExtension.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+void VulkanEngineApplication::VulkanWindow::addInstanceRequiredExtension(const char *extensionName) {
+	instanceExtension.push_back(extensionName);
 }
 
 void VulkanEngineApplication::VulkanWindow::selectPhisicalDevice(void) {
 	std::vector<VkPhysicalDevice> phisicalDevices;
 	uint32_t deviceCount = 0u;
-	vkEnumeratePhysicalDevices(vulkanInstance, &deviceCount, nullptr);
+	vkEnumeratePhysicalDevices(vulkanData.vulkanInstance, &deviceCount, nullptr);
 	if (deviceCount > 0) {
 		phisicalDevices.resize(deviceCount);
-		vkEnumeratePhysicalDevices(vulkanInstance, &deviceCount, phisicalDevices.data());
+		vkEnumeratePhysicalDevices(vulkanData.vulkanInstance, &deviceCount, phisicalDevices.data());
 		for (const auto &device : phisicalDevices) {
 			int32_t queueFamilyIndex = -1;
 			if (isDeviceSuitable(device, queueFamilyIndex)) {
@@ -242,16 +259,6 @@ bool VulkanEngineApplication::VulkanWindow::isDeviceSuitable(VkPhysicalDevice mD
 		mDeviceFeatures.tessellationShader &&
 		mDeviceFeatures.samplerAnisotropy &&
 		(mDeviceQueueFamilyIndex >= 0);
-}
-
-void VulkanEngineApplication::VulkanWindow::createWindowSurface(void) {
-#ifndef _ANDROID_
-
-	if (glfwCreateWindowSurface(vulkanInstance, mWindow, nullptr, &vulkanData.windowSurface) != VK_SUCCESS) {
-		throw std::runtime_error("[Error] Failed to create window surface!");
-	}
-
-#endif
 }
 
 void VulkanEngineApplication::VulkanWindow::createDevice(void) {
@@ -353,10 +360,10 @@ VkExtent2D VulkanEngineApplication::VulkanWindow::chooseSwapExtent(const VkSurfa
 	if (mCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
 		return mCapabilities.currentExtent;
 	} else {
-		int width, height;
-		glfwGetWindowSize(mWindow, &width, &height);
+		//int width, height;
+		//glfwGetWindowSize(mWindow, &width, &height);
 
-		VkExtent2D mWindowExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+		VkExtent2D mWindowExtent = vulkanData.mSwapChainImageExtent;//{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 
 		mWindowExtent.height = std::max(mCapabilities.minImageExtent.height,
 			std::min(mCapabilities.maxImageExtent.height, mWindowExtent.height));
@@ -407,7 +414,7 @@ void VulkanEngineApplication::VulkanWindow::createSwapchain(void) {
 	vkGetSwapchainImagesKHR(vulkanData.device, vulkanData.swapchain, &mImageCount, vulkanData.swapchainImage.data());
 
 	vulkanData.mSwapChainImageFormat = mSwapChainCreateStruct.imageFormat;
-	mSwapChainImageExtent = mSwapChainCreateStruct.imageExtent;
+	vulkanData.mSwapChainImageExtent = mSwapChainCreateStruct.imageExtent;
 }
 
 void VulkanEngineApplication::VulkanWindow::createSwapchainImageView(void) {
@@ -514,13 +521,64 @@ void VulkanEngineApplication::VulkanWindow::createFramebuffer(void) {
 		mFramebufferCreateInfoStruct.renderPass = vulkanData.swapchainRenderpass;
 		mFramebufferCreateInfoStruct.attachmentCount = static_cast<uint32_t>(mAttachments.size());
 		mFramebufferCreateInfoStruct.pAttachments = mAttachments.data();
-		mFramebufferCreateInfoStruct.height = mSwapChainImageExtent.height;
-		mFramebufferCreateInfoStruct.width = mSwapChainImageExtent.width;
+		mFramebufferCreateInfoStruct.height = vulkanData.mSwapChainImageExtent.height;
+		mFramebufferCreateInfoStruct.width = vulkanData.mSwapChainImageExtent.width;
 		mFramebufferCreateInfoStruct.layers = 1;
 
 		if (vkCreateFramebuffer(vulkanData.device, &mFramebufferCreateInfoStruct, nullptr, &vulkanData.swapchainFramebuffer[i]) != VK_SUCCESS) {
 			throw std::runtime_error("[DBG]\tFailed to create framebuffer!");
 		}
+	}
+}
+
+void VulkanEngineApplication::VulkanWindow::createCommandPool(void) {
+	VkCommandPoolCreateInfo mCommandPoolCreateInfoStruct = {};
+	mCommandPoolCreateInfoStruct.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	mCommandPoolCreateInfoStruct.queueFamilyIndex = vulkanData.queueFamilyIndex;
+	mCommandPoolCreateInfoStruct.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+	if (vkCreateCommandPool(vulkanData.device, &mCommandPoolCreateInfoStruct, nullptr, &vulkanData.commandPool) != VK_SUCCESS) {
+		throw std::runtime_error("[DBG]\tFailed to create command pool!");
+	}
+}
+
+void VulkanEngineApplication::VulkanWindow::createCommandBuffer(void) {
+	vulkanData.commandBuffer.resize(vulkanData.swapchainImage.size());
+
+	VkCommandBufferAllocateInfo mCommandBufferAllocateInfoStruct = {};
+	mCommandBufferAllocateInfoStruct.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	mCommandBufferAllocateInfoStruct.commandPool = vulkanData.commandPool;
+	mCommandBufferAllocateInfoStruct.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	mCommandBufferAllocateInfoStruct.commandBufferCount = static_cast<uint32_t>(vulkanData.commandBuffer.size());
+
+	if (vkAllocateCommandBuffers(vulkanData.device, &mCommandBufferAllocateInfoStruct, vulkanData.commandBuffer.data()) != VK_SUCCESS) {
+		throw std::runtime_error("[DBG] Failed to allocate command buffer!");
+	}
+
+	/*for (size_t i = 0; i < vulkanData.commandBuffer.size(); ++i)
+	{
+		VkCommandBufferBeginInfo mCommandBufferBeginInfo = {};
+		mCommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		mCommandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+		mCommandBufferBeginInfo.pInheritanceInfo = nullptr;
+
+		vkBeginCommandBuffer(vulkanData.commandBuffer[i], &mCommandBufferBeginInfo);
+
+		drawImage->draw(vulkanData.commandBuffer[i], i);
+
+		if (vkEndCommandBuffer(vulkanData.commandBuffer[i]) != VK_SUCCESS) {
+			throw std::runtime_error("[DBG]\tFailed to record command buffer!");
+		}
+	}*/
+}
+
+void VulkanEngineApplication::VulkanWindow::createSemaphore(void) {
+	VkSemaphoreCreateInfo mSemaphoreCreateInfo = {};
+	mSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	if (vkCreateSemaphore(vulkanData.device, &mSemaphoreCreateInfo, nullptr, &vulkanData.imageAvailable) != VK_SUCCESS ||
+		vkCreateSemaphore(vulkanData.device, &mSemaphoreCreateInfo, nullptr, &vulkanData.renderFinish) != VK_SUCCESS) {
+		throw std::runtime_error("[DBG]\tFailed to create semaphores!");
 	}
 }
 
@@ -561,17 +619,9 @@ void VulkanEngineApplication::VulkanWindow::setupDebugReport(void)
 	mDebugReportCallbackCreateInfoStruct.pfnCallback = debugCallback;
 	mDebugReportCallbackCreateInfoStruct.pUserData = this;
 
-	if (createDebugReportCallbackEXT(vulkanInstance, &mDebugReportCallbackCreateInfoStruct, nullptr, &mCallbackDebugReport) != VK_SUCCESS)
+	if (createDebugReportCallbackEXT(vulkanData.vulkanInstance, &mDebugReportCallbackCreateInfoStruct, nullptr, &mCallbackDebugReport) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to set up debug callback!");
-}
-
-void VulkanEngineApplication::VulkanWindow::OnWindowResize(GLFWwindow * mWindow, int width, int height)
-{
-	if (!width || !height)
-		return;
-
-	VulkanEngineApplication::VulkanWindow *mApplication = static_cast<VulkanEngineApplication::VulkanWindow *>(glfwGetWindowUserPointer(mWindow));
-	//mApplication->RecreateSwapChain();
+	}
 }
 
 void VulkanEngineApplication::VulkanWindow::printApplicationInfo(void) {
@@ -607,10 +657,10 @@ void VulkanEngineApplication::VulkanWindow::printPhisicalDevices(void) {
 	std::cout << "Enumerate Devices" << std::endl;
 	std::vector<VkPhysicalDevice> devices;
 	uint32_t deviceCount = 0u;
-	vkEnumeratePhysicalDevices(vulkanInstance, &deviceCount, nullptr);
+	vkEnumeratePhysicalDevices(vulkanData.vulkanInstance, &deviceCount, nullptr);
 	if (deviceCount > 0) {
 		devices.resize(deviceCount);
-		vkEnumeratePhysicalDevices(vulkanInstance, &deviceCount, devices.data());
+		vkEnumeratePhysicalDevices(vulkanData.vulkanInstance, &deviceCount, devices.data());
 		for (const auto &d : devices) {
 
 			VkPhysicalDeviceFeatures feature;
