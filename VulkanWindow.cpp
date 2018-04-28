@@ -1,5 +1,6 @@
 #include "VulkanWindow.h"
 
+
 VulkanEngineApplication::VulkanWindow::VulkanWindow(void) {
 	device = new VulkanDevice(&vulkanData);
 	swapchain = new VulkanSwapchain(&vulkanData);

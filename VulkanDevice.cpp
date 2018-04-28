@@ -31,8 +31,7 @@ void VulkanEngineApplication::VulkanDevice::selectPhisicalDevice(void) {
 VulkanEngineApplication::SwapChainSupportDetails VulkanEngineApplication::VulkanDevice::querySwapChainSupport(VkPhysicalDevice mDevice)
 {
 	VulkanEngineApplication::SwapChainSupportDetails mSwapChainProperties;
-
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mDevice, vulkanData->windowSurface, &mSwapChainProperties.mCapabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mDevice, vulkanData->windowSurface, &mSwapChainProperties.mCapabilities);
 
 	uint32_t mFormatCount = 0;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(mDevice, vulkanData->windowSurface, &mFormatCount, nullptr);
@@ -109,12 +108,12 @@ bool VulkanEngineApplication::VulkanDevice::isDeviceSuitable(VkPhysicalDevice mD
 		mSwapChainAdequate = !mSwapChainProperties.mFormats.empty() && !mSwapChainProperties.mPresentModes.empty();
 	}
 
-	return	(mDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) &&
+	return	(mDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || mDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) &&
 		mDeviceAvailableExtensionSupport &&
 		mSwapChainAdequate &&
 		mDeviceFeatures.geometryShader &&
 		mDeviceFeatures.tessellationShader &&
-		mDeviceFeatures.samplerAnisotropy &&
+		//mDeviceFeatures.samplerAnisotropy &&
 		(mDeviceQueueFamilyIndex >= 0);
 }
 
@@ -132,7 +131,7 @@ void VulkanEngineApplication::VulkanDevice::createDevice(void) {
 	deviceQueueInfo.queueFamilyIndex = vulkanData->queueFamilyIndex;
 
 	VkPhysicalDeviceFeatures deviceFeature = {};
-	deviceFeature.samplerAnisotropy = VK_TRUE;
+	//deviceFeature.samplerAnisotropy = VK_TRUE;
 
 	VkDeviceCreateInfo deviceInfo = {};
 	deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -155,7 +154,8 @@ void VulkanEngineApplication::VulkanDevice::createDevice(void) {
 		deviceInfo.ppEnabledLayerNames = nullptr;
 	}
 
-	if (vkCreateDevice(vulkanData->physicalDevice, &deviceInfo, nullptr, &vulkanData->device) != VK_SUCCESS) {
+    VkResult result;
+	if ((result = vkCreateDevice(vulkanData->physicalDevice, &deviceInfo, nullptr, &vulkanData->device)) != VK_SUCCESS) {
 		throw std::runtime_error("[ERROR] Failed to create device");
 	}
 

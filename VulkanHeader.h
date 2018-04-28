@@ -11,14 +11,17 @@
 #else 
 //Android Init
 
+//#define VK_USE_PLATFORM_ANDROID_KHR
+
+
 #include <unistd.h>
 #include <android/log.h>
-#include "vulkan_wrapper.h" // Include Vulkan_wrapper and dynamically load symbols.
+#include <dlfcn.h>
 #include <unistd.h>
-
-#include "vulkan/vk_sdk_platform.h"
-#include <vulkan/vulkan.h>
-
+//#include <vulkan/vulkan.h>
+//#include <vulkan/vk_platform.h>
+//#include <android_native_app_glue.h>
+#include "vulkan_wrapper.h"
 
 #endif // !ANDROID
 /////////////////////////////////////////////////////////////////////

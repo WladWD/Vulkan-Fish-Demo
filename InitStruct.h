@@ -24,6 +24,8 @@ namespace VulkanEngineApplication
 		//////////////////////////////////////////////////
 		std::vector<VkQueue> queue;
 		int32_t queueFamilyIndex;
+		//present_queue_family
+		//game_queue_family
 		//////////////////////////////////////////////////
 		VkSurfaceKHR windowSurface;
 		VkSwapchainKHR swapchain;
