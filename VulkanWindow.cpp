@@ -40,9 +40,9 @@ const VulkanEngineApplication::VulkanData * VulkanEngineApplication::VulkanWindo
 	return &vulkanData;
 }
 
-void VulkanEngineApplication::VulkanWindow::initialize(void) {
+void VulkanEngineApplication::VulkanWindow::initialize(const Asset::AssetLoader *assetLoader) {
 	initVulkan();
-	engine->initialize();
+	engine->initialize(assetLoader);
 
 #ifdef _DEBUG
 	info->printApplicationInfo();
@@ -76,7 +76,7 @@ void VulkanEngineApplication::VulkanWindow::resume(void) {
 
 void VulkanEngineApplication::VulkanWindow::draw() {
 
-	vkQueueWaitIdle(vulkanData.queue[0]);
+	vkQueueWaitIdle(vulkanData.graphicsQueue[0]);
 
 	VkResult mResult = vkAcquireNextImageKHR(vulkanData.device, vulkanData.swapchain, std::numeric_limits<uint64_t>::max(), vulkanData.imageAvailable, VK_NULL_HANDLE, &vulkanData.mImageIndex);
 
@@ -121,12 +121,12 @@ void VulkanEngineApplication::VulkanWindow::draw() {
 	mPresentInfo.pImageIndices = &vulkanData.mImageIndex;
 	mPresentInfo.pResults = nullptr;
 
-	VkResult error = vkQueueSubmit(vulkanData.queue[0], 1, &mSubmitInfo, VK_NULL_HANDLE);
+	VkResult error = vkQueueSubmit(vulkanData.graphicsQueue[0], 1, &mSubmitInfo, VK_NULL_HANDLE);
 	if (error != VK_SUCCESS) {
 		throw std::runtime_error("[DGB]\tFailed to submit draw command to buffer!");
 	}
 
-	vkQueuePresentKHR(vulkanData.queue[0], &mPresentInfo);
+	vkQueuePresentKHR(vulkanData.graphicsQueue[0], &mPresentInfo);
 }
 
 void VulkanEngineApplication::VulkanWindow::initVulkan(void) {

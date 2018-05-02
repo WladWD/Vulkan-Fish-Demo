@@ -20,7 +20,7 @@
 #include <unistd.h>
 //#include <vulkan/vulkan.h>
 //#include <vulkan/vk_platform.h>
-//#include <android_native_app_glue.h>
+#include <android_native_app_glue.h>
 #include "vulkan_wrapper.h"
 
 #endif // !ANDROID

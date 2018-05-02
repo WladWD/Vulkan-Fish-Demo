@@ -1,5 +1,6 @@
 #include "VulkanWindow.h"
 #include <iostream>
+#include "FileAssetLoader.h"
 #pragma once
 
 namespace VulkanEngineApplication
@@ -11,6 +12,7 @@ namespace VulkanEngineApplication
 		const VulkanData *vulkanData;
 		/////////////////////////////////////////////////////////////////////////////////////
 		VulkanWindow *window;
+		Asset::AssetLoader *assetLoader;
 		/////////////////////////////////////////////////////////////////////////////////////
 		void initWindow(int32_t width, int32_t height, const char *sTitle);
 		void createWindowSurface(void);

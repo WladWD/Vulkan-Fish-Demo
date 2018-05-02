@@ -3,7 +3,7 @@
 
 VulkanEngineApplication::GLFWWindow::GLFWWindow(int32_t width, int32_t height, const char * sTitle) : vulkanData(nullptr), glfwWindow(nullptr), window(nullptr) {
 	window = new VulkanWindow();
-
+	assetLoader = new Asset::FileAssetLoader();
 	vulkanData = window->getVulkanData();
 	initWindow(width, height, sTitle);
 
@@ -11,11 +11,12 @@ VulkanEngineApplication::GLFWWindow::GLFWWindow(int32_t width, int32_t height, c
 	window->createInstance();
 	
 	createWindowSurface();
-	window->initialize();
+	window->initialize(assetLoader);
 }
 
 VulkanEngineApplication::GLFWWindow::~GLFWWindow() {
 	delete window;
+	delete assetLoader;
 
 	glfwDestroyWindow(glfwWindow);
 	glfwTerminate();

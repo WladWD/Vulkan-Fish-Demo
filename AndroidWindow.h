@@ -1,5 +1,6 @@
 #include "VulkanWindow.h"
 #include <iostream>
+#include "AndroidAssetLoader.h"
 #pragma once
 
 namespace VulkanEngineApplication
@@ -10,12 +11,13 @@ namespace VulkanEngineApplication
 		VulkanData *vulkanData;
 		/////////////////////////////////////////////////////////////////////////////////////
 		VulkanWindow *window;
+		Asset::AndroidAssetLoader *assetLoader;
 		/////////////////////////////////////////////////////////////////////////////////////
 		void initWindow(int32_t width, int32_t height, const char *sTitle);
 		void addInstanceExtension(void);
 		/////////////////////////////////////////////////////////////////////////////////////
 	public:
-		AndroidWindow(int32_t width, int32_t height, const char *sTitle = "Vulkan");
+		AndroidWindow(int32_t width, int32_t height, AAssetManager *pAssetManager, const char *sTitle = "Vulkan");
 		~AndroidWindow();
 		/////////////////////////////////////////////////////////////////////////////////////
 		void createWindowSurface(ANativeWindow* window);

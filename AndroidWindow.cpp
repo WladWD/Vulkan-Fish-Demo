@@ -1,7 +1,9 @@
 #include "AndroidWindow.h"
 
-VulkanEngineApplication::AndroidWindow::AndroidWindow(int32_t width, int32_t height, const char * sTitle) {
+VulkanEngineApplication::AndroidWindow::AndroidWindow(int32_t width, int32_t height, AAssetManager *pAssetManager, const char * sTitle) {
     InitVulkan();
+
+    assetLoader = new Asset::AndroidAssetLoader(pAssetManager);
 
     window = new VulkanWindow();
     vulkanData = const_cast<VulkanData *>(window->getVulkanData());
@@ -26,7 +28,7 @@ void VulkanEngineApplication::AndroidWindow::createWindowSurface(ANativeWindow* 
 		throw std::runtime_error("[DBG] failed to create surface");
 	}
 
-    this->window->initialize();
+    this->window->initialize(assetLoader);
 }
 
 void VulkanEngineApplication::AndroidWindow::addInstanceExtension(void) {

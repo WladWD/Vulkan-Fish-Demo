@@ -49,7 +49,7 @@ namespace VulkanEngineApplication
 		~VulkanWindow();
 		/////////////////////////////////////////////////////////////////////////////////////
 		void createInstance(void);
-		void initialize(void);
+		void initialize(const Asset::AssetLoader *assetLoader);
 		void addInstanceRequiredExtension(const char *extensionName);
 		/////////////////////////////////////////////////////////////////////////////////////
 		const VulkanEngineApplication::VulkanData *getVulkanData();

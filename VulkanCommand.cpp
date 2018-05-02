@@ -11,7 +11,7 @@ VulkanEngineApplication::VulkanCommand::~VulkanCommand() {
 void VulkanEngineApplication::VulkanCommand::createCommandPool(void) {
 	VkCommandPoolCreateInfo mCommandPoolCreateInfoStruct = {};
 	mCommandPoolCreateInfoStruct.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	mCommandPoolCreateInfoStruct.queueFamilyIndex = vulkanData->queueFamilyIndex;
+	mCommandPoolCreateInfoStruct.queueFamilyIndex = vulkanData->graphicsQueueFamilyIndex;
 	mCommandPoolCreateInfoStruct.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 	if (vkCreateCommandPool(vulkanData->device, &mCommandPoolCreateInfoStruct, nullptr, &vulkanData->commandPool) != VK_SUCCESS) {

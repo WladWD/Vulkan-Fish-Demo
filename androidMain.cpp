@@ -58,7 +58,14 @@ void android_main(struct android_app* app) {
     int events;
     android_poll_source* source;
 
-    androidWindow = new VulkanEngineApplication::AndroidWindow(800, 600);
+    AAssetManager *pAssetManager = app->activity->assetManager;
+//    AAsset  *file = AAssetManager_open(pAssetManager, mName.c_str(), AASSET_MODE_UNKNOWN);
+//    lenght = AAsset_getLength(file);
+//    *resource = new char[lenght];
+//    AAsset_read(file, const_cast<char *>(*resource), lenght);
+//    AAsset_close(file);
+
+    androidWindow = new VulkanEngineApplication::AndroidWindow(800, 600, pAssetManager);
     // Main loop
     do {
         if (ALooper_pollAll(isReady() ? 1 : 0, nullptr,//IsVulkanReady

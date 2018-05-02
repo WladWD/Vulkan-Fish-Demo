@@ -1,17 +1,25 @@
 #include "InitStruct.h"
+#include "AssetLoader.h"
+
 #pragma once
 namespace Engine 
 {
 	class DrawImage
 	{
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		VkImage sourceImage;
+		VkDeviceMemory imageMemory;
+		VkExtent3D sourceExtent;
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		const VulkanEngineApplication::VulkanData * vulkanData;
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		void loadImage(VkCommandBuffer commandBuffer, const char *imageName, const Asset::AssetLoader *assetLoader);
+		void createImage(VkCommandBuffer commandBuffer, const char *data, uint32_t size, VkExtent3D extent, VkFormat format);
 	public:
 		DrawImage(const VulkanEngineApplication::VulkanData * vulkanData);
 		~DrawImage();
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		void initialize(void);
+		void initialize(VkCommandBuffer initializeCommandBuffer, const Asset::AssetLoader *assetLoader);
 		void draw(VkCommandBuffer commandBuffer, int32_t frameIdx);
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	};

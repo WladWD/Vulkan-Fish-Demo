@@ -22,8 +22,8 @@ namespace VulkanEngineApplication
 		VkPhysicalDevice physicalDevice;
 		VkDevice device;
 		//////////////////////////////////////////////////
-		std::vector<VkQueue> queue;
-		int32_t queueFamilyIndex;
+		std::vector<VkQueue> graphicsQueue;
+		int32_t graphicsQueueFamilyIndex;
 		//present_queue_family
 		//game_queue_family
 		//////////////////////////////////////////////////

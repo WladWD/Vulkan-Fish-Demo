@@ -18,10 +18,10 @@ void VulkanEngineApplication::VulkanDevice::selectPhisicalDevice(void) {
 		phisicalDevices.resize(deviceCount);
 		vkEnumeratePhysicalDevices(vulkanData->vulkanInstance, &deviceCount, phisicalDevices.data());
 		for (const auto &device : phisicalDevices) {
-			int32_t queueFamilyIndex = -1;
-			if (isDeviceSuitable(device, queueFamilyIndex)) {
+			int32_t graphicsQueueFamilyIndex = -1;
+			if (isDeviceSuitable(device, graphicsQueueFamilyIndex)) {
 				vulkanData->physicalDevice = device;
-				vulkanData->queueFamilyIndex = queueFamilyIndex;
+				vulkanData->graphicsQueueFamilyIndex = graphicsQueueFamilyIndex;
 				break;
 			}
 		}
@@ -128,7 +128,7 @@ void VulkanEngineApplication::VulkanDevice::createDevice(void) {
 	deviceQueueInfo.pNext = nullptr;
 	deviceQueueInfo.pQueuePriorities = queuePriority;
 	deviceQueueInfo.queueCount = 1;
-	deviceQueueInfo.queueFamilyIndex = vulkanData->queueFamilyIndex;
+	deviceQueueInfo.queueFamilyIndex = vulkanData->graphicsQueueFamilyIndex;
 
 	VkPhysicalDeviceFeatures deviceFeature = {};
 	//deviceFeature.samplerAnisotropy = VK_TRUE;
@@ -159,8 +159,8 @@ void VulkanEngineApplication::VulkanDevice::createDevice(void) {
 		throw std::runtime_error("[ERROR] Failed to create device");
 	}
 
-	vulkanData->queue.resize(1);
-	vkGetDeviceQueue(vulkanData->device, vulkanData->queueFamilyIndex, 0, &vulkanData->queue[0]);
+	vulkanData->graphicsQueue.resize(1);
+	vkGetDeviceQueue(vulkanData->device, vulkanData->graphicsQueueFamilyIndex, 0, &vulkanData->graphicsQueue[0]);
 }
 
 void VulkanEngineApplication::VulkanDevice::initialize(void) {
