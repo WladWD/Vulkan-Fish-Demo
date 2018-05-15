@@ -6,7 +6,11 @@ Shader::ShaderStageBase::ShaderStageBase(
 	const Asset::AssetLoader *asset,
 	const VulkanEngineApplication::VulkanData *vulkanData, 
 	VkShaderStageFlagBits stage,
-	const char *entryName) : vulkanData(vulkanData) {
+	std::vector<int32_t> specIdx,
+	const VkSpecializationMapEntry *specEntry,
+	const void *specData,
+	uint32_t dataSize,
+	const char *entryName): vulkanData(vulkanData) {
 	assert(asset != nullptr);
 
 	int64_t size; uint8_t *data;
@@ -15,11 +19,16 @@ Shader::ShaderStageBase::ShaderStageBase(
 	shaderInfo.stage = stage; 
 	shaderInfo.pName = entryName;
 	createModule(size, data);
+	initializeSpecConstant(specIdx.data(), specIdx.size(), specEntry);
+	specInfo.pData = specData;
+	specInfo.dataSize = static_cast<size_t>(dataSize);
+
 	delete[] data;
 }
 
 Shader::ShaderStageBase::~ShaderStageBase() {
 	vkDestroyShaderModule(vulkanData->device, shaderInfo.module, nullptr);
+	delete[] specInfo.pMapEntries;
 }
 
 void Shader::ShaderStageBase::createModule(int64_t size, uint8_t * data) {
@@ -32,6 +41,22 @@ void Shader::ShaderStageBase::createModule(int64_t size, uint8_t * data) {
 
 	VkResult result;
 	assert((result = vkCreateShaderModule(vulkanData->device, &shaderCreateInfo, nullptr, &shaderInfo.module)) == VK_SUCCESS);
+}
+
+void Shader::ShaderStageBase::initializeSpecConstant(int32_t *specIdx, size_t specIdxCount,  const VkSpecializationMapEntry * specEntry) {
+	specInfo.mapEntryCount = 0;
+	specInfo.pMapEntries = nullptr;
+	shaderInfo.pSpecializationInfo = &specInfo;
+
+	if (specEntry == nullptr || !specIdxCount || specIdx == nullptr) return;
+
+	VkSpecializationMapEntry *specEntrys = new VkSpecializationMapEntry[specIdxCount];
+	for (size_t i = 0; i < specIdxCount; ++i) {
+		specEntrys[i] = specEntry[specIdx[i]];
+	}
+
+	specInfo.mapEntryCount = static_cast<uint32_t>(specIdxCount);
+	specInfo.pMapEntries = specEntrys;
 }
 
 void Shader::ShaderStageBase::initialize(void) {

@@ -1,31 +1,68 @@
 #include "DrawImageShaderPipeline.h"
 #include "FragmentShaderImageDraw.h"
 #include "DrawImageUniformStruct.h"
+#include "DrawImagePushConstant.h"
 
 
 Shader::DrawImageShaderPipeline::DrawImageShaderPipeline(
 	const Asset::AssetLoader * asset,
-	const VulkanEngineApplication::VulkanData * vulkanData): ShaderPipeline(vulkanData) {
-	addStage(new ShaderStageBase("Resources\\Shaders\\ImageDraw\\vert.spv", asset, vulkanData, VK_SHADER_STAGE_VERTEX_BIT));
-	addStage(new FragmentShaderImageDraw("Resources\\Shaders\\ImageDraw\\frag.spv", asset, vulkanData, VK_SHADER_STAGE_FRAGMENT_BIT, glm::vec4(1.0, 0.0, 0.0, 1.0)));
+	const VulkanEngineApplication::VulkanData * vulkanData, const ConstBuffer &constBuffer): ShaderPipeline(vulkanData) {
+
+	auto entry = ConstBuffer::getEntry();
+
+	addStage(new ShaderStageBase("Resources\\Shaders\\ImageDraw\\vert.spv", asset, vulkanData, VK_SHADER_STAGE_VERTEX_BIT,
+	{0}, entry.data(), &constBuffer, sizeof(constBuffer)));
+	addStage(new FragmentShaderImageDraw("Resources\\Shaders\\ImageDraw\\frag.spv", asset, vulkanData, VK_SHADER_STAGE_FRAGMENT_BIT,
+	{1}, entry.data(), &constBuffer, sizeof(constBuffer)));
 
 	initializeDescriptorSetLayout();
 	initializeDescriptorPool();
 	initializeDescriptorSet();
 	initializePipelineLayout();
+	initializeUniformBuffer();
 }
 
 Shader::DrawImageShaderPipeline::~DrawImageShaderPipeline() {
+	vkUnmapMemory(vulkanData->device, uniformBufferMemory);
 	
+	vkDestroyBuffer(vulkanData->device, uniformBuffer, nullptr);
+	vkFreeMemory(vulkanData->device, uniformBufferMemory, nullptr);
+}
+
+VkBuffer Shader::DrawImageShaderPipeline::getUniformRotationBuffer(void) {
+	return uniformBuffer;
+}
+
+void Shader::DrawImageShaderPipeline::setRotationUniformBlockValue(const UniformBuffer &buffer) {
+	memcpy(rotationUniformBuffer, &buffer, sizeof(buffer));
+}
+
+void Shader::DrawImageShaderPipeline::initializeUniformBuffer(void) {
+	VkDeviceSize uniformBufferSize = sizeof(Shader::DrawImageShaderPipeline::UniformBuffer);
+	VulkanInitialize::createBuffer(vulkanData, uniformBufferSize,
+		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		uniformBuffer, uniformBufferMemory);
+
+	vkMapMemory(vulkanData->device, uniformBufferMemory, 0, sizeof(Shader::DrawImageShaderPipeline::UniformBuffer), 0, reinterpret_cast<void **>(&rotationUniformBuffer));
 }
 
 void Shader::DrawImageShaderPipeline::initializePipelineLayout(void) {
+
+	std::array<VkPushConstantRange, 1> pushRange = {};
+	pushRange[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	pushRange[0].offset = offsetof(PushConstantBuffer, multipleColor);
+	pushRange[0].size = sizeof(PushConstantBuffer::multipleColor);
+
+
 	VkPipelineLayoutCreateInfo mPipelineLayoutCreateInfo = {};
 	mPipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	mPipelineLayoutCreateInfo.setLayoutCount = static_cast<decltype(mPipelineLayoutCreateInfo.setLayoutCount)>(descriptorSetLayouts.size());
 	mPipelineLayoutCreateInfo.pSetLayouts = descriptorSetLayouts.data();
 	mPipelineLayoutCreateInfo.pushConstantRangeCount = 0;
 	mPipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
+	mPipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(pushRange.size());
+	mPipelineLayoutCreateInfo.pPushConstantRanges = pushRange.data();
 
 	VkResult res = vkCreatePipelineLayout(vulkanData->device, &mPipelineLayoutCreateInfo, nullptr, &pipelineLayout);
 	if (res != VK_SUCCESS) {

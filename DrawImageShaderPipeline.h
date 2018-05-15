@@ -1,11 +1,23 @@
 #include "ShaderPipeline.h"
 #include "DrawImageVertex.h"
+#include "VulkanCreater.h"
 
 #pragma once
 namespace Shader {
 	class DrawImageShaderPipeline: public ShaderPipeline {
+	private:
 		class FragmentShaderImageDraw;
+	public:
+		struct UniformBuffer;
+		struct ConstBuffer;
+		struct PushConstantBuffer;
 
+	private:
+		VkBuffer uniformBuffer;
+		VkDeviceMemory uniformBufferMemory;
+		void *rotationUniformBuffer;
+
+		void initializeUniformBuffer(void);
 		void initializePipelineLayout(void);
 		void initializeDescriptorPool(void);
 		void initializeDescriptorSet(void);
@@ -13,23 +25,12 @@ namespace Shader {
 	public:
 		DrawImageShaderPipeline(
 			const Asset::AssetLoader *asset,
-			const VulkanEngineApplication::VulkanData *vulkanData);
+			const VulkanEngineApplication::VulkanData *vulkanData,
+			const ConstBuffer &constBuffer);
 		~DrawImageShaderPipeline();
 
-		struct UniformBuffer;
-	};
-
-
-	class DrawImageShaderPipeline::FragmentShaderImageDraw: public ShaderStageBase {
-	public:
-		FragmentShaderImageDraw(
-			const char *shaderResourceName,
-			const Asset::AssetLoader *asset,
-			const VulkanEngineApplication::VulkanData *vulkanData,
-			VkShaderStageFlagBits stage,
-			glm::vec4 clearColor,
-			const char *entryName = "main");
-		~FragmentShaderImageDraw();
+		VkBuffer getUniformRotationBuffer(void);
+		void setRotationUniformBlockValue(const UniformBuffer &buffer);
 	};
 }
 

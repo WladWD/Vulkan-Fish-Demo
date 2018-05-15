@@ -1,20 +1,11 @@
-#include "DrawImage.h"
+#include "DrawTextLine.h"
 
-
-Engine::DrawImage::DrawImage(const VulkanEngineApplication::VulkanData * vulkanData, 
-	const VulkanEngineApplication::VulkanEngineData *vulkanEngineData) : vulkanData(vulkanData), vulkanEngineData(vulkanEngineData), drawText(nullptr) {
+Engine::DrawTextLine::DrawTextLine(const VulkanEngineApplication::VulkanData * vulkanData,
+	const VulkanEngineApplication::VulkanEngineData *vulkanEngineData) : vulkanData(vulkanData), vulkanEngineData(vulkanEngineData) {
 }
 
-Engine::DrawImage::~DrawImage() {
-	delete drawText;
-
+Engine::DrawTextLine::~DrawTextLine() {
 	delete shaderPipeline;
-
-	vkDestroyBuffer(vulkanData->device, vertexBuffer, nullptr);
-	vkDestroyBuffer(vulkanData->device, indexBuffer, nullptr);
-
-	vkFreeMemory(vulkanData->device, vertexBufferMemory, nullptr);
-	vkFreeMemory(vulkanData->device, indexBufferMemory, nullptr);
 
 	vkDestroyImageView(vulkanData->device, sourceImageView, nullptr);
 	vkDestroyImage(vulkanData->device, sourceImage, nullptr);
@@ -23,29 +14,21 @@ Engine::DrawImage::~DrawImage() {
 	vkDestroyPipeline(vulkanData->device, drawImagePipeline, nullptr);
 }
 
-void Engine::DrawImage::initialize(const Asset::AssetLoader *assetLoader) {
-	drawText = new DrawTextLine(vulkanData, vulkanEngineData);
-	drawText->initialize(assetLoader);
+void Engine::DrawTextLine::initialize(const Asset::AssetLoader *assetLoader) {
+	loadImage("Resources\\Images\\font.dds", assetLoader);
+	shaderPipeline = new Shader::DrawTextLineShaderPipeline(assetLoader, vulkanData);
 
-	loadImage("Resources\\Images\\initialize.dds", assetLoader);
-	Shader::DrawImageShaderPipeline::ConstBuffer constBuffer;
-	constBuffer.color = glm::vec4(1.0, 1.0, 0.0, 1.0);
-	constBuffer.scale = 2.0;
-	shaderPipeline = new Shader::DrawImageShaderPipeline(assetLoader, vulkanData, constBuffer);
-
-	initializeVertexBuffer();
-	initializeIndexBuffer();
 	updateDescriptorSet();
 	initializePipeline();
 }
 
-void Engine::DrawImage::loadImage(const char * imageName, const Asset::AssetLoader *assetLoader) {
+void Engine::DrawTextLine::loadImage(const char * imageName, const Asset::AssetLoader *assetLoader) {
 	uint8_t *data = nullptr;
 	int64_t dataSize = 0;
 	assetLoader->loadAssetByName(std::string(imageName), &data, dataSize);
 
 	gli::texture tex = gli::load_dds((char *)data, static_cast<size_t>(dataSize));
-	
+
 	VkExtent3D extent = { static_cast<uint32_t>(tex.extent().x), static_cast<uint32_t>(tex.extent().y), static_cast<uint32_t>(tex.extent().z) };
 	auto f = tex.format();
 	VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -54,7 +37,7 @@ void Engine::DrawImage::loadImage(const char * imageName, const Asset::AssetLoad
 	delete[] data;
 }
 
-void Engine::DrawImage::createImage(const char * data, uint32_t size, VkExtent3D extent, VkFormat format) {
+void Engine::DrawTextLine::createImage(const char * data, uint32_t size, VkExtent3D extent, VkFormat format) {
 
 	VkImageCreateInfo imageInfo = {};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -95,10 +78,10 @@ void Engine::DrawImage::createImage(const char * data, uint32_t size, VkExtent3D
 	}
 }
 
-void Engine::DrawImage::initializePipeline(void) {
+void Engine::DrawTextLine::initializePipeline(void) {
 
-	auto mVertexAttributeDescription = Shader::DrawImageVertex::getAttributeDescription();
-	auto mVertexBindingDescrioption = Shader::DrawImageVertex::getBindingDescription();
+	auto mVertexAttributeDescription = VertexFormat::VertexPosition::getAttributeDescription();
+	auto mVertexBindingDescrioption = VertexFormat::VertexPosition::getBindingDescription();
 
 	VkPipelineVertexInputStateCreateInfo mVertexInputStageCreateInfo = {};
 	mVertexInputStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -214,141 +197,55 @@ void Engine::DrawImage::initializePipeline(void) {
 	}
 }
 
-void Engine::DrawImage::initializeVertexBuffer(void) {
-	VkDeviceSize bufferSize = sizeof(Shader::DrawImageVertex) * mInputVertex.size();
-
-	VulkanInitialize::createInitializeDeviceLocalBuffer(vulkanData,
-		vulkanData->commandPool,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		bufferSize,
-		mInputVertex.data(), 
-		vertexBuffer, 
-		vertexBufferMemory);
-}
-
-void Engine::DrawImage::initializeIndexBuffer(void) {
-	VkDeviceSize bufferSize = sizeof(uint16_t) * inputIndex.size();
-
-	VulkanInitialize::createInitializeDeviceLocalBuffer(vulkanData,
-		vulkanData->commandPool,
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		bufferSize,
-		inputIndex.data(),
-		indexBuffer, 
-		indexBufferMemory);
-}
-
-void Engine::DrawImage::updateDescriptorSet(void) {
+void Engine::DrawTextLine::updateDescriptorSet(void) {
 	VkDescriptorImageInfo imageInfo = {};
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageInfo.imageView = sourceImageView;
 	imageInfo.sampler = vulkanEngineData->samplers->minMaxMag_Linear_UVW_Wrap;
 
-	VkDescriptorBufferInfo bufferInfo = {};
-	bufferInfo.buffer = shaderPipeline->getUniformRotationBuffer();
-	bufferInfo.offset = 0;
-	bufferInfo.range = sizeof(Shader::DrawImageShaderPipeline::UniformBuffer);
-
-	std::array<VkWriteDescriptorSet, 2> writeDescriptors = {};
+	std::array<VkWriteDescriptorSet, 1> writeDescriptors = {};
 	writeDescriptors[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	writeDescriptors[0].dstSet = shaderPipeline->getDescriptorSets()[0];
 	writeDescriptors[0].dstBinding = 0;
 	writeDescriptors[0].dstArrayElement = 0;
-	writeDescriptors[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	writeDescriptors[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	writeDescriptors[0].descriptorCount = 1;
-	writeDescriptors[0].pBufferInfo = &bufferInfo;
-	writeDescriptors[0].pImageInfo = nullptr;
+	writeDescriptors[0].pBufferInfo = nullptr;
+	writeDescriptors[0].pImageInfo = &imageInfo;
 	writeDescriptors[0].pTexelBufferView = nullptr;
-
-	writeDescriptors[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptors[1].dstSet = shaderPipeline->getDescriptorSets()[0];
-	writeDescriptors[1].dstBinding = 1;
-	writeDescriptors[1].dstArrayElement = 0;
-	writeDescriptors[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	writeDescriptors[1].descriptorCount = 1;
-	writeDescriptors[1].pBufferInfo = nullptr;
-	writeDescriptors[1].pImageInfo = &imageInfo;
-	writeDescriptors[1].pTexelBufferView = nullptr;
 
 	vkUpdateDescriptorSets(vulkanData->device, static_cast<uint32_t>(writeDescriptors.size()), writeDescriptors.data(), 0, nullptr);
 }
 
-void Engine::DrawImage::updateUniforms(void)
-{
-	//Update UBO;
+void Engine::DrawTextLine::updatePushConstant(std::string message, glm::vec2 offset, glm::vec2 scale) {
 
-	static auto begTime = std::chrono::high_resolution_clock::now();
-	auto curTime = std::chrono::high_resolution_clock::now();
-	auto deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(curTime - begTime).count();
+	pushBuffer.scaleOffset = glm::vec4(scale.x, scale.y, offset.x, offset.y);
 
-	buffer.projView = glm::perspective(1.0f, static_cast<float>(vulkanData->mSwapChainImageExtent.width) / static_cast<float>(vulkanData->mSwapChainImageExtent.height), 1.0f, 1000.0f);
-	buffer.projView *= glm::lookAt(glm::vec3(0.0, 0.0, 2.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-	buffer.projView *= glm::rotate(glm::mat4(1.0), deltaTime, glm::vec3(0.0, 1.0, 0.0));
-	//ubo.projView = glm::mat4(1.0);
+	auto toUint = [] (int a, int b, int c, int d) -> uint32_t {
+		return a + (b << 8) + (c << 16) + (d << 24);
+	};
 
-	shaderPipeline->setRotationUniformBlockValue(buffer);
-	/*Shader::DrawImageShaderPipeline::UniformBuffer *uniformMemory = nullptr;
-	vkMapMemory(vulkanData->device, uniformBufferMemory, 0, sizeof(Shader::DrawImageShaderPipeline::UniformBuffer), 0, reinterpret_cast<void **>(&uniformMemory));
-	memcpy(uniformMemory, &buffer, sizeof(buffer));
-	vkUnmapMemory(vulkanData->device, uniformBufferMemory);*/
+	message = "this message, fps = " + message;
+
+	pushBuffer.data.cData[0] = glm::min(static_cast<uint32_t>(message.length()), 112U);
+	memcpy(pushBuffer.data.cData + 1, message.c_str(), static_cast<size_t>(pushBuffer.data.cData[0]));
+	//for (size_t i = 0; i < text.length(); ++i)
+	//	pushBuffer.data.cData[i + 1] = text[i];//toUint(text[i], text[i + 1], text[i + 2], text[i + 3]);
 }
 
-void Engine::DrawImage::updatePushConstant(void) {
-	static auto begTime = std::chrono::high_resolution_clock::now();
-	auto curTime = std::chrono::high_resolution_clock::now();
-	auto deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(curTime - begTime).count();
+void Engine::DrawTextLine::draw(VkCommandBuffer commandBuffer, int32_t frameIdx, std::string text, glm::vec2 offest, glm::vec2 scale) {
+	updatePushConstant(text, offest, scale);
 
-	pushBuffer.multipleColor = glm::vec4(1.0, glm::sin(deltaTime * 2.0) * 0.5 + 0.5, 1.0, 1.0);
-}
-
-void Engine::DrawImage::draw(VkCommandBuffer commandBuffer, int32_t frameIdx) {
-
-	updateUniforms();
-	updatePushConstant();
-
-	VkBuffer mBuffers[] = { vertexBuffer };
+	VkBuffer mBuffers[] = { vulkanEngineData->quadBuffer->getVertexBuffer() };
 	VkDeviceSize mOffsets[] = { 0 };
 
-	std::array<VkClearValue, 1> mClearValue;
-	mClearValue[0].color = { 1.0f, 1.0f, 0.0f, 1.0f };
-	//mClearValue[1].depthStencil = { 1.0f, 0 };
-
-	VkRenderPassBeginInfo mRenderPassBeginInfo = {};
-	mRenderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	mRenderPassBeginInfo.renderPass = vulkanData->swapchainRenderpass;
-	mRenderPassBeginInfo.framebuffer = vulkanData->swapchainFramebuffer[frameIdx];
-	mRenderPassBeginInfo.renderArea.offset = { 0, 0 };
-	mRenderPassBeginInfo.renderArea.extent.width = vulkanData->mSwapChainImageExtent.width;
-	mRenderPassBeginInfo.renderArea.extent.height = vulkanData->mSwapChainImageExtent.height;
-	mRenderPassBeginInfo.clearValueCount = static_cast<uint32_t>(mClearValue.size());
-	mRenderPassBeginInfo.pClearValues = mClearValue.data();
-
-	vkCmdBeginRenderPass(commandBuffer, &mRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	vkCmdPushConstants(commandBuffer, shaderPipeline->getPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushBuffer), &pushBuffer);
+	vkCmdPushConstants(commandBuffer, shaderPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushBuffer), &pushBuffer);
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, drawImagePipeline);
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, mBuffers, mOffsets);
-	vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+	vkCmdBindIndexBuffer(commandBuffer, vulkanEngineData->quadBuffer->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPipeline->getPipelineLayout(), 0, 1, shaderPipeline->getDescriptorSets(), 0, nullptr);
 	vkCmdDrawIndexed(commandBuffer, 6, 1, 0, 0, 0);
-	//vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	static uint64_t frameCount = 0;
-	static auto startTime = std::chrono::high_resolution_clock::now();
-	auto curTime = std::chrono::high_resolution_clock::now();
-	double dt = (std::chrono::duration_cast<std::chrono::milliseconds>(curTime - startTime)).count(); ++frameCount;
-
-	double fps = static_cast<double>(frameCount) / dt * 1000.0;
-
-	float scale = 0.1f;
-	drawText->draw(commandBuffer, frameIdx, std::to_string(fps), glm::vec2(0.1, 0.8),
-		glm::vec2(4.0 * scale * (vulkanData->mSwapChainImageExtent.width * 1.0 / vulkanData->mSwapChainImageExtent.height), scale));
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	vkCmdEndRenderPass(commandBuffer);
 }
 
 

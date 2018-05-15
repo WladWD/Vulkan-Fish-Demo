@@ -1,19 +1,22 @@
 #include "ShaderStageBase.h"
 #include "DrawImageShaderPipeline.h"
-
+#include "DrawImageConstBuffer.h"
 
 #pragma once
 namespace Shader {
-	/*class FragmentShaderImageDraw: public ShaderStageBase {
+	class DrawImageShaderPipeline::FragmentShaderImageDraw : public ShaderStageBase {
 	public:
 		FragmentShaderImageDraw(
 			const char *shaderResourceName,
-			Asset::AssetLoader *asset,
+			const Asset::AssetLoader *asset,
 			const VulkanEngineApplication::VulkanData *vulkanData,
 			VkShaderStageFlagBits stage,
-			glm::vec4 clearColor,
+			std::vector<int32_t> specIdx = {},
+			const VkSpecializationMapEntry *specEntry = nullptr,
+			const void *specData = nullptr,
+			uint32_t dataSize = 0,
 			const char *entryName = "main");
 		~FragmentShaderImageDraw();
-	};*/
+	}; 
 }
 

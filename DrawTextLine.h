@@ -6,40 +6,17 @@
 #include "DrawImagePushConstant.h"
 #include "VulkanCreater.h"
 #include "VulkanEngineData.h"
-#include "DrawTextLine.h"
+#include "DrawTextLineShaderPipeline.h"
+#include "DrawTextPushConstant.h"
 #include <chrono>
 
 #pragma once
 namespace Engine {
-
-	struct UniformBuffer {
-		glm::mat4 projView;
-	};
-
-	class DrawImage
-	{
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		DrawTextLine *drawText;
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		Shader::DrawImageShaderPipeline *shaderPipeline;
-		Shader::DrawImageShaderPipeline::PushConstantBuffer pushBuffer;
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		const std::vector<Shader::DrawImageVertex> mInputVertex = {
-			{ { 0.5f,  -0.5f, 0.0f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 0.0f } },
-			{ { 0.5f,   0.5f, 0.0f },{ 0.0f, 0.0f, 0.0f },{ 1.0f, 1.0f } },
-			{ { -0.5f,  0.5f, 0.0f },{ 1.0f, 1.0f, 0.0f },{ 0.0f, 1.0f } },
-			{ { -0.5f, -0.5f, 0.0f },{ 1.0f, 1.0f, 0.0f },{ 0.0f, 0.0f } }
-		};
-
-		const std::vector<uint16_t> inputIndex = {
-			0, 1, 2, 0, 2, 3
-		};
-
-		Shader::DrawImageShaderPipeline::UniformBuffer buffer;
+	class DrawTextLine {
+		Shader::DrawTextLineShaderPipeline *shaderPipeline;
+		Shader::DrawTextLineShaderPipeline::PushConstantBuffer pushBuffer;
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		VkPipeline drawImagePipeline;
-		VkBuffer vertexBuffer, indexBuffer;
-		VkDeviceMemory vertexBufferMemory, indexBufferMemory;
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		VkImageView sourceImageView;
 		VkImage sourceImage;
@@ -52,18 +29,14 @@ namespace Engine {
 		void loadImage(const char *imageName, const Asset::AssetLoader *assetLoader);
 		void createImage(const char *data, uint32_t size, VkExtent3D extent, VkFormat format);
 		void initializePipeline(void);
-		void initializeVertexBuffer(void);
-		void initializeIndexBuffer(void);
 		void updateDescriptorSet(void);
-
-		void updateUniforms(void);
-		void updatePushConstant(void);
+		void updatePushConstant(std::string text, glm::vec2 offest, glm::vec2 scale);
 	public:
-		DrawImage(const VulkanEngineApplication::VulkanData * vulkanData, const VulkanEngineApplication::VulkanEngineData *vulkanEngineData);
-		~DrawImage();
+		DrawTextLine(const VulkanEngineApplication::VulkanData * vulkanData, const VulkanEngineApplication::VulkanEngineData *vulkanEngineData);
+		~DrawTextLine();
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		void initialize(const Asset::AssetLoader *assetLoader);
-		void draw(VkCommandBuffer commandBuffer, int32_t frameIdx);
+		void draw(VkCommandBuffer commandBuffer, int32_t frameIdx, std::string text, glm::vec2 offest, glm::vec2 scale);
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	};
 }

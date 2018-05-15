@@ -1,4 +1,5 @@
 #include "VulkanHeader.h"
+#include "SamplersContainer.h"
 
 #pragma once
 namespace VulkanEngineApplication
@@ -8,10 +9,6 @@ namespace VulkanEngineApplication
 		VkSurfaceCapabilitiesKHR mCapabilities;
 		std::vector<VkSurfaceFormatKHR> mFormats;
 		std::vector<VkPresentModeKHR> mPresentModes;
-	};
-
-	struct UniformBuffer {
-		glm::mat4 projView;
 	};
 
 	struct VulkanData {
@@ -43,5 +40,6 @@ namespace VulkanEngineApplication
 		std::vector<VkCommandBuffer> commandBuffer;
 		VkCommandPool commandPool;
 		//////////////////////////////////////////////////
+		//Samplers::SamplersContainer *samplers;
 	};
 }
