@@ -6,33 +6,27 @@
 #include "DrawImagePushConstant.h"
 #include "VulkanCreater.h"
 #include "VulkanEngineData.h"
-#include "DrawTextLine.h"
+
 #include <chrono>
 
 #pragma once
 namespace Engine {
 
-	struct UniformBuffer {
-		glm::mat4 projView;
-	};
-
-	class DrawImage
-	{
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		DrawTextLine *drawText;
+	class DrawImage {
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		Shader::DrawImageShaderPipeline *shaderPipeline;
 		Shader::DrawImageShaderPipeline::PushConstantBuffer pushBuffer;
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		const std::vector<Shader::DrawImageVertex> mInputVertex = {
-			{ { 0.5f,  -0.5f, 0.0f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 0.0f } },
-			{ { 0.5f,   0.5f, 0.0f },{ 0.0f, 0.0f, 0.0f },{ 1.0f, 1.0f } },
-			{ { -0.5f,  0.5f, 0.0f },{ 1.0f, 1.0f, 0.0f },{ 0.0f, 1.0f } },
-			{ { -0.5f, -0.5f, 0.0f },{ 1.0f, 1.0f, 0.0f },{ 0.0f, 0.0f } }
+			{ { 0.5f,  -0.5f, 0.0f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ { 0.5f,   0.5f, 0.0f },{ 0.0f, 0.0f, 0.0f },{ 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ { -0.5f,  0.5f, 0.0f },{ 1.0f, 1.0f, 0.0f },{ 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ { -0.5f, -0.5f, 0.0f },{ 1.0f, 1.0f, 0.0f },{ 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } }
 		};
 
 		const std::vector<uint16_t> inputIndex = {
-			0, 1, 2, 0, 2, 3
+			0, 3, 1, 2
+			//0, 1, 2, 0, 2, 3
 		};
 
 		Shader::DrawImageShaderPipeline::UniformBuffer buffer;
@@ -45,12 +39,23 @@ namespace Engine {
 		VkImage sourceImage;
 		VkDeviceMemory imageMemory;
 		VkExtent3D sourceExtent;
+
+		VkImageView nomalSourceImageView;
+		VkImage nomalSourceImage;
+		VkDeviceMemory nomalImageMemory;
+		VkExtent3D nomalSourceExtent;
+
+		VkImageView depthSourceImageView;
+		VkImage depthSourceImage;
+		VkDeviceMemory depthImageMemory;
+		VkExtent3D depthSourceExtent;
+
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		const VulkanEngineApplication::VulkanData * vulkanData;
 		const VulkanEngineApplication::VulkanEngineData *vulkanEngineData;
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		void loadImage(const char *imageName, const Asset::AssetLoader *assetLoader);
-		void createImage(const char *data, uint32_t size, VkExtent3D extent, VkFormat format);
+		void loadImage(const char *imageName, const Asset::AssetLoader *assetLoader, VkImage &sourceImage, VkDeviceMemory &imageMemory, VkImageView &sourceImageView, VkExtent3D &sourceExtent);
+		void createImage(const char *data, uint32_t size, VkExtent3D extent, VkFormat format, VkImage &sourceImage, VkDeviceMemory &imageMemory, VkImageView &sourceImageView, VkExtent3D &sourceExtent);
 		void initializePipeline(void);
 		void initializeVertexBuffer(void);
 		void initializeIndexBuffer(void);
@@ -63,7 +68,8 @@ namespace Engine {
 		~DrawImage();
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		void initialize(const Asset::AssetLoader *assetLoader);
-		void draw(VkCommandBuffer commandBuffer, int32_t frameIdx);
+		void resize(void);
+		void draw(VkCommandBuffer commandBuffer);
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	};
 }

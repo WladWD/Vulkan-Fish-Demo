@@ -3,6 +3,7 @@
 
 Engine::VulkanEngine::VulkanEngine(const VulkanEngineApplication::VulkanData * vulkanData) : vulkanData(vulkanData) {
 	drawImage = new DrawImage(vulkanData, &vulkanEngineData);
+	drawFPS = new DrawFPS(vulkanData, &vulkanEngineData);
 }
 
 Engine::VulkanEngine::~VulkanEngine() {
@@ -10,21 +11,55 @@ Engine::VulkanEngine::~VulkanEngine() {
 	delete vulkanEngineData.samplers;
 
 	delete drawImage;
+	delete drawFPS;
 }
 
 void Engine::VulkanEngine::initialize(const Asset::AssetLoader *assetLoader) {
-	vulkanEngineData.samplers = new Samplers::SamplersContainer(vulkanData->device);
-	vulkanEngineData.quadBuffer = new Engine::QuadBuffer(vulkanData);
+	initializeEngine();
+
 	drawImage->initialize(assetLoader);
+	drawFPS->initialize(assetLoader);
 }
 
 void Engine::VulkanEngine::resize(void) {
+	drawImage->resize();
+	drawFPS->resize();
 }
 
 void Engine::VulkanEngine::pause(void) {
 }
 
 void Engine::VulkanEngine::resume(void) {
+}
+
+void Engine::VulkanEngine::initializeEngine(void) {
+	vulkanEngineData.samplers = new Samplers::SamplersContainer(vulkanData->device);
+	vulkanEngineData.quadBuffer = new Engine::QuadBuffer(vulkanData);
+}
+
+void Engine::VulkanEngine::drawToSwapChainTexture(void) {
+	std::array<VkClearValue, 2> mClearValue;
+	mClearValue[0].color = { 1.0f, 1.0f, 0.0f, 1.0f };
+	mClearValue[1].depthStencil = { 1.0f, 0 };
+
+	VkRenderPassBeginInfo mRenderPassBeginInfo = {};
+	mRenderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	mRenderPassBeginInfo.renderPass = vulkanData->swapchainRenderpass;
+	mRenderPassBeginInfo.framebuffer = vulkanData->swapchainFramebuffer[vulkanData->mImageIndex];
+	mRenderPassBeginInfo.renderArea.offset = { 0, 0 };
+	mRenderPassBeginInfo.renderArea.extent.width = vulkanData->mSwapChainImageExtent.width;
+	mRenderPassBeginInfo.renderArea.extent.height = vulkanData->mSwapChainImageExtent.height;
+	mRenderPassBeginInfo.clearValueCount = static_cast<uint32_t>(mClearValue.size());
+	mRenderPassBeginInfo.pClearValues = mClearValue.data();
+
+	vkCmdBeginRenderPass(vulkanData->commandBuffer[vulkanData->mImageIndex], &mRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	//Degin Drawing
+	drawImage->draw(vulkanData->commandBuffer[vulkanData->mImageIndex]);
+	drawFPS->draw(vulkanData->commandBuffer[vulkanData->mImageIndex]);
+	//End Drawwing
+
+	vkCmdEndRenderPass(vulkanData->commandBuffer[vulkanData->mImageIndex]);
 }
 
 void Engine::VulkanEngine::draw(void) {
@@ -36,8 +71,10 @@ void Engine::VulkanEngine::draw(void) {
 
 	vkBeginCommandBuffer(vulkanData->commandBuffer[vulkanData->mImageIndex], &mCommandBufferBeginInfo);
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//Drawing
-	drawImage->draw(vulkanData->commandBuffer[vulkanData->mImageIndex], vulkanData->mImageIndex);
+	//Draw Deffered
+
+	//Draw to Swapchain
+	drawToSwapChainTexture();
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	if (vkEndCommandBuffer(vulkanData->commandBuffer[vulkanData->mImageIndex]) != VK_SUCCESS) {
 		throw std::runtime_error("[DBG]\tFailed to record command buffer!");

@@ -57,8 +57,8 @@ void VulkanEngineApplication::VulkanWindow::resize(void) {
 	framebuffer->free();
 	framebuffer->initialize();
 
-	command->free();
-	command->initialize();
+	//command->free();
+	//command->initialize();
 
 	engine->resize();
 }
@@ -135,9 +135,9 @@ void VulkanEngineApplication::VulkanWindow::initVulkan(void) {
 
 	device->initialize();
 	swapchain->initialize();
-	framebuffer->initialize();
 	command->initialize();
-
+	swapchain->createDepthBuffer();
+	framebuffer->initialize();
 	createSemaphore();
 }
 

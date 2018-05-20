@@ -48,6 +48,8 @@ VkSurfaceFormatKHR VulkanEngineApplication::VulkanSwapchain::chooseSwapSurfaceFo
 VkPresentModeKHR VulkanEngineApplication::VulkanSwapchain::choosePresentMode(const std::vector<VkPresentModeKHR> &mAvailablePresentModes) {
 	VkPresentModeKHR mBestMode = VK_PRESENT_MODE_FIFO_KHR;
 
+	return mBestMode;
+
 	for (const auto &mAvailableMode : mAvailablePresentModes) {
 		if (mAvailableMode == VK_PRESENT_MODE_MAILBOX_KHR)
 			return mAvailableMode;
@@ -72,6 +74,93 @@ VkExtent2D VulkanEngineApplication::VulkanSwapchain::chooseSwapExtent(const VkSu
 			std::min(mCapabilities.maxImageExtent.width, mWindowExtent.width));
 		return mWindowExtent;
 	}
+}
+
+VkFormat VulkanEngineApplication::VulkanSwapchain::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags feature)
+{
+	for (VkFormat format : candidates) {
+		VkFormatProperties properties;
+		vkGetPhysicalDeviceFormatProperties(vulkanData->physicalDevice, format, &properties);
+
+		if (tiling == VK_IMAGE_TILING_LINEAR && ((properties.linearTilingFeatures & feature) == feature))
+			return format;
+		else if (tiling == VK_IMAGE_TILING_OPTIMAL && ((properties.optimalTilingFeatures & feature) == feature))
+			return format;
+	}
+
+	throw std::runtime_error("Failed to find compatible format");
+}
+
+VkFormat VulkanEngineApplication::VulkanSwapchain::findDepthFormat(void) {
+	return findSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT }, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+}
+
+bool VulkanEngineApplication::VulkanSwapchain::hasStensilComponent(VkFormat format) {
+	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+}
+
+void VulkanEngineApplication::VulkanSwapchain::createDepthImage() {
+	VkImageCreateInfo imageInfo = {};
+	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.arrayLayers = 1;
+	imageInfo.extent.width = vulkanData->mSwapChainImageExtent.width;
+	imageInfo.extent.height = vulkanData->mSwapChainImageExtent.height;
+	imageInfo.extent.depth = 1;
+	imageInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.flags = 0;
+	imageInfo.mipLevels = 1;
+	imageInfo.format = vulkanData->depthFormat;
+	imageInfo.pQueueFamilyIndices = nullptr;
+	imageInfo.queueFamilyIndexCount = 0;
+	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+	VulkanInitialize::createImage2D(vulkanData, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &imageInfo, vulkanData->depthBuffer, vulkanData->depthMemory);
+}
+
+void VulkanEngineApplication::VulkanSwapchain::createDepthImageView() {
+	VkImageViewCreateInfo viewInfo = {};
+	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image = vulkanData->depthBuffer;
+	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.format = vulkanData->depthFormat;
+	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.layerCount = 1;
+	viewInfo.subresourceRange.levelCount = 1;
+
+	if (hasStensilComponent(viewInfo.format)) {
+		viewInfo.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+	}
+
+
+	if (vkCreateImageView(vulkanData->device, &viewInfo, nullptr, &vulkanData->depthBufferView) != VK_SUCCESS) {
+		throw std::runtime_error("[DBG] Failed create image view");
+	}
+}
+
+void VulkanEngineApplication::VulkanSwapchain::createDepthBuffer(void) {
+	vulkanData->depthFormat = findDepthFormat();
+	createDepthImage();
+	createDepthImageView();
+
+	VkCommandBuffer commandBuffer = VulkanInitialize::beginSingleTimeCommand(vulkanData, vulkanData->commandPool);
+	VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+	if (hasStensilComponent(vulkanData->depthFormat)) {
+		aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
+	}
+
+	VulkanInitialize::transitionImageLayout(vulkanData->depthBuffer, vulkanData->depthFormat,
+		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 
+		0, 0, 
+		0, 0, 
+		aspect, 
+		commandBuffer);
+	VulkanInitialize::endSingleTimeCommand(vulkanData, vulkanData->commandPool, commandBuffer);
 }
 
 void VulkanEngineApplication::VulkanSwapchain::createSwapchain(void) {
@@ -148,6 +237,11 @@ void VulkanEngineApplication::VulkanSwapchain::createSwapchainImageView(void) {
 }
 
 void VulkanEngineApplication::VulkanSwapchain::free(void) {
+
+	vkDestroyImageView(vulkanData->device, vulkanData->depthBufferView,  nullptr);
+	vkDestroyImage(vulkanData->device, vulkanData->depthBuffer, nullptr);
+	vkFreeMemory(vulkanData->device, vulkanData->depthMemory, nullptr);
+
 	for (size_t i = 0; i < vulkanData->swapchainImageView.size(); ++i)
 		vkDestroyImageView(vulkanData->device, vulkanData->swapchainImageView[i], nullptr);
 
@@ -162,4 +256,5 @@ void VulkanEngineApplication::VulkanSwapchain::initialize(void) {
 void VulkanEngineApplication::VulkanSwapchain::resize(void) {
 	free();
 	initialize();
+	createDepthBuffer();
 }

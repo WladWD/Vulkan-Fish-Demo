@@ -8,16 +8,17 @@ VulkanEngineApplication::VulkanFramebuffer::~VulkanFramebuffer() {
 	free();
 }
 
+
 void VulkanEngineApplication::VulkanFramebuffer::createRenderPass(void) {
-	/*VkAttachmentDescription depthAttachment = {};
-	depthAttachment.format = findDepthFormat();
+	VkAttachmentDescription depthAttachment = {};
+	depthAttachment.format = vulkanData->depthFormat;
 	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;*/
+	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentDescription mAttachmentDescription = {};
 	mAttachmentDescription.format = vulkanData->mSwapChainImageFormat;
@@ -29,9 +30,9 @@ void VulkanEngineApplication::VulkanFramebuffer::createRenderPass(void) {
 	mAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 	mAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-	//VkAttachmentReference depthAttachmentReference = {};
-	//depthAttachmentReference.attachment = 1;
-	//depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	VkAttachmentReference depthAttachmentReference = {};
+	depthAttachmentReference.attachment = 1;
+	depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentReference mColorAttachmentReference = {};
 	mColorAttachmentReference.attachment = 0;
@@ -41,9 +42,9 @@ void VulkanEngineApplication::VulkanFramebuffer::createRenderPass(void) {
 	mSubpassStruct.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	mSubpassStruct.colorAttachmentCount = 1;
 	mSubpassStruct.pColorAttachments = &mColorAttachmentReference;
-	mSubpassStruct.pDepthStencilAttachment = nullptr;//&depthAttachmentReference;
+	mSubpassStruct.pDepthStencilAttachment = &depthAttachmentReference;
 
-	std::array<VkAttachmentDescription, 1> attachment = { mAttachmentDescription };// , depthAttachment };
+	std::array<VkAttachmentDescription, 2> attachment = { mAttachmentDescription, depthAttachment };
 
 	VkRenderPassCreateInfo mRenderPassCreateInfoStruct = {};
 	mRenderPassCreateInfoStruct.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -62,7 +63,7 @@ void VulkanEngineApplication::VulkanFramebuffer::createRenderPass(void) {
 
 	mRenderPassCreateInfoStruct.dependencyCount = 1;
 	mRenderPassCreateInfoStruct.pDependencies = &mDependency;
-
+	
 	if (vkCreateRenderPass(vulkanData->device, &mRenderPassCreateInfoStruct, nullptr, &vulkanData->swapchainRenderpass) != VK_SUCCESS) {
 		throw std::runtime_error("[DBG]\tFailed to create render pass!");
 	}
@@ -72,9 +73,9 @@ void VulkanEngineApplication::VulkanFramebuffer::createFramebuffer(void) {
 	vulkanData->swapchainFramebuffer.resize(vulkanData->swapchainImage.size());
 
 	for (size_t i = 0; i < vulkanData->swapchainFramebuffer.size(); ++i) {
-		std::array<VkImageView, 1> mAttachments = {
-			vulkanData->swapchainImageView[i]
-			//depthImageView
+		std::array<VkImageView, 2> mAttachments = {
+			vulkanData->swapchainImageView[i],
+			vulkanData->depthBufferView
 		};
 
 		VkFramebufferCreateInfo mFramebufferCreateInfoStruct = {};

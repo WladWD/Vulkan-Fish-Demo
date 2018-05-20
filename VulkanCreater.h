@@ -11,6 +11,7 @@ namespace VulkanInitialize {
 		VkImageLayout oldLayout, VkImageLayout newLayout,
 		VkAccessFlags srcAccess, VkAccessFlags dstAccess,
 		VkPipelineStageFlags srcStageMack, VkPipelineStageFlags dstStageMack,
+		VkImageAspectFlags aspect,
 		VkCommandBuffer commandBuffer);
 
 	void createBuffer(const VulkanEngineApplication::VulkanData * vulkanData,

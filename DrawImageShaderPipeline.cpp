@@ -12,6 +12,8 @@ Shader::DrawImageShaderPipeline::DrawImageShaderPipeline(
 
 	addStage(new ShaderStageBase("Resources\\Shaders\\ImageDraw\\vert.spv", asset, vulkanData, VK_SHADER_STAGE_VERTEX_BIT,
 	{0}, entry.data(), &constBuffer, sizeof(constBuffer)));
+	addStage(new ShaderStageBase("Resources\\Shaders\\ImageDraw\\tesc.spv", asset, vulkanData, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT));
+	addStage(new ShaderStageBase("Resources\\Shaders\\ImageDraw\\tese.spv", asset, vulkanData, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT));
 	addStage(new FragmentShaderImageDraw("Resources\\Shaders\\ImageDraw\\frag.spv", asset, vulkanData, VK_SHADER_STAGE_FRAGMENT_BIT,
 	{1}, entry.data(), &constBuffer, sizeof(constBuffer)));
 
@@ -44,15 +46,15 @@ void Shader::DrawImageShaderPipeline::initializeUniformBuffer(void) {
 		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 		uniformBuffer, uniformBufferMemory);
 
-	vkMapMemory(vulkanData->device, uniformBufferMemory, 0, sizeof(Shader::DrawImageShaderPipeline::UniformBuffer), 0, reinterpret_cast<void **>(&rotationUniformBuffer));
+	vkMapMemory(vulkanData->device, uniformBufferMemory, 0, uniformBufferSize, 0, reinterpret_cast<void **>(&rotationUniformBuffer));
 }
 
 void Shader::DrawImageShaderPipeline::initializePipelineLayout(void) {
 
 	std::array<VkPushConstantRange, 1> pushRange = {};
 	pushRange[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	pushRange[0].offset = offsetof(PushConstantBuffer, multipleColor);
-	pushRange[0].size = sizeof(PushConstantBuffer::multipleColor);
+	pushRange[0].offset = offsetof(PushConstantBuffer, lightColor);
+	pushRange[0].size = sizeof(PushConstantBuffer);
 
 
 	VkPipelineLayoutCreateInfo mPipelineLayoutCreateInfo = {};
@@ -71,12 +73,18 @@ void Shader::DrawImageShaderPipeline::initializePipelineLayout(void) {
 }
 
 void Shader::DrawImageShaderPipeline::initializeDescriptorPool(void) {
-	std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+	std::array<VkDescriptorPoolSize, 4> poolSizes = {};
 	poolSizes[0].descriptorCount = 1;
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
 	poolSizes[1].descriptorCount = 1;
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+	poolSizes[2].descriptorCount = 1;
+	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+	poolSizes[3].descriptorCount = 1;
+	poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -111,14 +119,28 @@ void Shader::DrawImageShaderPipeline::initializeDescriptorSetLayout(void) {
 	samplerlayoutBinding.pImmutableSamplers = nullptr;
 	samplerlayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+	VkDescriptorSetLayoutBinding nomalSamplerlayoutBinding = {};
+	nomalSamplerlayoutBinding.binding = 2;
+	nomalSamplerlayoutBinding.descriptorCount = 1;
+	nomalSamplerlayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	nomalSamplerlayoutBinding.pImmutableSamplers = nullptr;
+	nomalSamplerlayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	VkDescriptorSetLayoutBinding dispSamplerlayoutBinding = {};
+	dispSamplerlayoutBinding.binding = 3;
+	dispSamplerlayoutBinding.descriptorCount = 1;
+	dispSamplerlayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	dispSamplerlayoutBinding.pImmutableSamplers = nullptr;
+	dispSamplerlayoutBinding.stageFlags = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+
 	VkDescriptorSetLayoutBinding layoutDescriptor = {};
 	layoutDescriptor.binding = 0;
 	layoutDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	layoutDescriptor.descriptorCount = 1;
-	layoutDescriptor.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	layoutDescriptor.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	layoutDescriptor.pImmutableSamplers = nullptr;
 
-	std::array<VkDescriptorSetLayoutBinding, 2> bindings = { layoutDescriptor, samplerlayoutBinding };
+	std::array<VkDescriptorSetLayoutBinding, 4> bindings = { layoutDescriptor, samplerlayoutBinding, nomalSamplerlayoutBinding, dispSamplerlayoutBinding };
 
 	VkDescriptorSetLayoutCreateInfo descriptorSetInfo = {};
 	descriptorSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

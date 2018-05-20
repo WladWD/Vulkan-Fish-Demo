@@ -34,5 +34,5 @@ void main() {
 	tex += scale * vec2(float(letter % column), float(letter / column));
 
 	gOut = texture(texChar, tex);
-	//if(gOut.r < 0.1) discard;
+	//if(gOut.r < 0.25) discard;
 }

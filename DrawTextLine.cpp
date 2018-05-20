@@ -14,6 +14,11 @@ Engine::DrawTextLine::~DrawTextLine() {
 	vkDestroyPipeline(vulkanData->device, drawImagePipeline, nullptr);
 }
 
+void Engine::DrawTextLine::resize(void) {
+	vkDestroyPipeline(vulkanData->device, drawImagePipeline, nullptr);
+	initializePipeline();
+}
+
 void Engine::DrawTextLine::initialize(const Asset::AssetLoader *assetLoader) {
 	loadImage("Resources\\Images\\font.dds", assetLoader);
 	shaderPipeline = new Shader::DrawTextLineShaderPipeline(assetLoader, vulkanData);
@@ -141,10 +146,10 @@ void Engine::DrawTextLine::initializePipeline(void) {
 		VK_COLOR_COMPONENT_G_BIT |
 		VK_COLOR_COMPONENT_B_BIT |
 		VK_COLOR_COMPONENT_A_BIT;
-	mColorBlendAttachmentState.blendEnable = VK_FALSE;
-	mColorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-	mColorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	mColorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+	mColorBlendAttachmentState.blendEnable = VK_TRUE;
+	mColorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	mColorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	mColorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 	mColorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 	mColorBlendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
 	mColorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
@@ -217,25 +222,31 @@ void Engine::DrawTextLine::updateDescriptorSet(void) {
 	vkUpdateDescriptorSets(vulkanData->device, static_cast<uint32_t>(writeDescriptors.size()), writeDescriptors.data(), 0, nullptr);
 }
 
-void Engine::DrawTextLine::updatePushConstant(std::string message, glm::vec2 offset, glm::vec2 scale) {
+void Engine::DrawTextLine::setMessage(std::string text,
+	glm::vec2 position,
+	float scale,
+	DrawTextAligment aligment,
+	DrawTextBindingPoint bindingPoint) {
+	pushBuffer.data.cData[0] = glm::min(static_cast<uint32_t>(text.length()), 112U);
+	memcpy(pushBuffer.data.cData + 1, text.c_str(), static_cast<size_t>(pushBuffer.data.cData[0]));
+	
+	float ar = static_cast<float>(vulkanData->mSwapChainImageExtent.width) / vulkanData->mSwapChainImageExtent.height;
+	position = position * 2.0f - glm::vec2(1.0);
 
-	pushBuffer.scaleOffset = glm::vec4(scale.x, scale.y, offset.x, offset.y);
-
-	auto toUint = [] (int a, int b, int c, int d) -> uint32_t {
-		return a + (b << 8) + (c << 16) + (d << 24);
-	};
-
-	message = "this message, fps = " + message;
-
-	pushBuffer.data.cData[0] = glm::min(static_cast<uint32_t>(message.length()), 112U);
-	memcpy(pushBuffer.data.cData + 1, message.c_str(), static_cast<size_t>(pushBuffer.data.cData[0]));
-	//for (size_t i = 0; i < text.length(); ++i)
-	//	pushBuffer.data.cData[i + 1] = text[i];//toUint(text[i], text[i + 1], text[i + 2], text[i + 3]);
+	glm::vec2 textScale = (aligment == DrawTextAligment::AligmentWidth) ? glm::vec2(scale, scale / text.length() * ar) : textScale = glm::vec2(scale * text.length() / ar, scale);
+	glm::vec2 offset = glm::vec2(0.0);
+	switch (bindingPoint) {
+	case DrawTextBindingPoint::LeftTop: offset = glm::vec2(textScale.x, textScale.y); break;
+	case DrawTextBindingPoint::LeftBotton: offset = glm::vec2(textScale.x, -textScale.y); break;
+	case DrawTextBindingPoint::RightTop: offset = glm::vec2(-textScale.x, textScale.y); break;
+	case DrawTextBindingPoint::RightBotton: offset = glm::vec2(-textScale.x, -textScale.y); break;
+	}
+	//glm::vec2 offset = (bindingPoint == DrawTextBindingPoint::LeftTop) ? glm::vec2(textScale.x, textScale.y) : glm::vec2(textScale.x, -textScale.y);
+	pushBuffer.scaleOffset = glm::vec4(textScale.x, textScale.y, position.x + offset.x, position.y + offset.y);
 }
 
-void Engine::DrawTextLine::draw(VkCommandBuffer commandBuffer, int32_t frameIdx, std::string text, glm::vec2 offest, glm::vec2 scale) {
-	updatePushConstant(text, offest, scale);
-
+void Engine::DrawTextLine::draw(VkCommandBuffer commandBuffer) {
+	
 	VkBuffer mBuffers[] = { vulkanEngineData->quadBuffer->getVertexBuffer() };
 	VkDeviceSize mOffsets[] = { 0 };
 

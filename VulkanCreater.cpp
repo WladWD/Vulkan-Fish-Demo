@@ -50,6 +50,7 @@ void VulkanInitialize::transitionImageLayout(VkImage image, VkFormat format,
 	VkImageLayout oldLayout, VkImageLayout newLayout,
 	VkAccessFlags srcAccess, VkAccessFlags dstAccess,
 	VkPipelineStageFlags srcStageMack, VkPipelineStageFlags dstStageMack,
+	VkImageAspectFlags aspect,
 	VkCommandBuffer commandBuffer)
 {
 	VkImageMemoryBarrier imageBarrier = {};
@@ -205,7 +206,7 @@ void VulkanInitialize::initializeImage2D(const VulkanEngineApplication::VulkanDa
 	transitionImageLayout(image, format,
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-		0, VK_ACCESS_TRANSFER_WRITE_BIT, commandBuffer);
+		0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_ASPECT_COLOR_BIT, commandBuffer);
 
 	VkBufferImageCopy region = {};
 	region.bufferOffset = 0;

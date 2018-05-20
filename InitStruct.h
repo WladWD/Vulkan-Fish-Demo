@@ -28,6 +28,11 @@ namespace VulkanEngineApplication
 		VkSwapchainKHR swapchain;
 		VkFormat mSwapChainImageFormat;
 		VkExtent2D mSwapChainImageExtent;
+
+		VkImage depthBuffer;
+		VkImageView depthBufferView;
+		VkDeviceMemory depthMemory;
+		VkFormat depthFormat;
 		//////////////////////////////////////////////////
 		std::vector<VkImage> swapchainImage;
 		std::vector<VkImageView> swapchainImageView;

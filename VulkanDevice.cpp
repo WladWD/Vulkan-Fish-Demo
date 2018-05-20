@@ -132,6 +132,7 @@ void VulkanEngineApplication::VulkanDevice::createDevice(void) {
 
 	VkPhysicalDeviceFeatures deviceFeature = {};
 	//deviceFeature.samplerAnisotropy = VK_TRUE;
+	deviceFeature.tessellationShader = VK_TRUE;
 
 	VkDeviceCreateInfo deviceInfo = {};
 	deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
