@@ -11,7 +11,7 @@ namespace Engine
 		DrawImage *drawImage;
 		DrawFPS *drawFPS;
 
-		void initializeEngine(void);
+		void initializeEngine(const Asset::AssetLoader *assetLoader);
 		void drawToSwapChainTexture(void);
 	public:
 		VulkanEngine(const VulkanEngineApplication::VulkanData * vulkanData);

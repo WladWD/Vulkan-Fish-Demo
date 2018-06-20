@@ -29,13 +29,13 @@ namespace VulkanInitialize {
 		VkBuffer &buffer,
 		VkDeviceMemory& bufferMemory);
 
-	void createImage2D(const VulkanEngineApplication::VulkanData * vulkanData,
+	void createImage(const VulkanEngineApplication::VulkanData * vulkanData,
 		VkMemoryPropertyFlags memoryFlag,
 		const VkImageCreateInfo *imageInfo,
 		VkImage &image,
 		VkDeviceMemory &imageMemory);
 
-	void initializeImage2D(const VulkanEngineApplication::VulkanData * vulkanData,
+	void initializeImage(const VulkanEngineApplication::VulkanData * vulkanData,
 		VkCommandPool commandPool,
 		const void * imageData,
 		VkDeviceSize imageDataSize,

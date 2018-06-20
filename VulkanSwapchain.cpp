@@ -118,7 +118,7 @@ void VulkanEngineApplication::VulkanSwapchain::createDepthImage() {
 	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-	VulkanInitialize::createImage2D(vulkanData, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &imageInfo, vulkanData->depthBuffer, vulkanData->depthMemory);
+	VulkanInitialize::createImage(vulkanData, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &imageInfo, vulkanData->depthBuffer, vulkanData->depthMemory);
 }
 
 void VulkanEngineApplication::VulkanSwapchain::createDepthImageView() {

@@ -14,6 +14,7 @@ Shader::DrawImageShaderPipeline::DrawImageShaderPipeline(
 	{0}, entry.data(), &constBuffer, sizeof(constBuffer)));
 	addStage(new ShaderStageBase("Resources\\Shaders\\ImageDraw\\tesc.spv", asset, vulkanData, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT));
 	addStage(new ShaderStageBase("Resources\\Shaders\\ImageDraw\\tese.spv", asset, vulkanData, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT));
+	addStage(new ShaderStageBase("Resources\\Shaders\\ImageDraw\\geom.spv", asset, vulkanData, VK_SHADER_STAGE_GEOMETRY_BIT));
 	addStage(new FragmentShaderImageDraw("Resources\\Shaders\\ImageDraw\\frag.spv", asset, vulkanData, VK_SHADER_STAGE_FRAGMENT_BIT,
 	{1}, entry.data(), &constBuffer, sizeof(constBuffer)));
 
@@ -53,8 +54,8 @@ void Shader::DrawImageShaderPipeline::initializePipelineLayout(void) {
 
 	std::array<VkPushConstantRange, 1> pushRange = {};
 	pushRange[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	pushRange[0].offset = offsetof(PushConstantBuffer, lightColor);
-	pushRange[0].size = sizeof(PushConstantBuffer);
+	pushRange[0].offset = 0;//offsetof(PushConstantBuffer, lightColor);
+	pushRange[0].size = sizeof(Shader::DrawImageShaderPipeline::PushConstantBuffer);
 
 
 	VkPipelineLayoutCreateInfo mPipelineLayoutCreateInfo = {};
@@ -131,13 +132,13 @@ void Shader::DrawImageShaderPipeline::initializeDescriptorSetLayout(void) {
 	dispSamplerlayoutBinding.descriptorCount = 1;
 	dispSamplerlayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	dispSamplerlayoutBinding.pImmutableSamplers = nullptr;
-	dispSamplerlayoutBinding.stageFlags = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+	dispSamplerlayoutBinding.stageFlags = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	VkDescriptorSetLayoutBinding layoutDescriptor = {};
 	layoutDescriptor.binding = 0;
 	layoutDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	layoutDescriptor.descriptorCount = 1;
-	layoutDescriptor.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	layoutDescriptor.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	layoutDescriptor.pImmutableSamplers = nullptr;
 
 	std::array<VkDescriptorSetLayoutBinding, 4> bindings = { layoutDescriptor, samplerlayoutBinding, nomalSamplerlayoutBinding, dispSamplerlayoutBinding };

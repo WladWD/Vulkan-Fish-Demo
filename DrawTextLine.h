@@ -8,6 +8,7 @@
 #include "VulkanEngineData.h"
 #include "DrawTextLineShaderPipeline.h"
 #include "DrawTextPushConstant.h"
+#include "SpecConstantDrawText.h"
 #include <chrono>
 
 #pragma once

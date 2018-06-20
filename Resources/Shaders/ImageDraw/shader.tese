@@ -42,7 +42,7 @@ void main() {
 	fTangent = sampled3(teTangent[0], teTangent[1], teTangent[2], teTangent[3]);
 
 	vec4 pos = sampled4(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_in[2].gl_Position, gl_in[3].gl_Position);
-	pos.z -= texture(dispMap, fragTexCoord).r * 0.3;
+	//pos.z -= texture(dispMap, fragTexCoord).r * 0.2;
 	gl_Position = ubo.mProjView * pos;
 
 	fPosition = pos.xyz;

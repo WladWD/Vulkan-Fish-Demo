@@ -1,12 +1,15 @@
 #include "DrawTextLineShaderPipeline.h"
 #include "DrawTextPushConstant.h"
+#include "SpecConstantDrawText.h"
 
 Shader::DrawTextLineShaderPipeline::DrawTextLineShaderPipeline(
 	const Asset::AssetLoader * asset,
-	const VulkanEngineApplication::VulkanData * vulkanData): ShaderPipeline(vulkanData) {
+	const VulkanEngineApplication::VulkanData * vulkanData,
+	const SpecConstantBuffer &specConstBuffer): ShaderPipeline(vulkanData) {
 
 	addStage(new ShaderStageBase("Resources\\Shaders\\DrawText\\vert.spv", asset, vulkanData, VK_SHADER_STAGE_VERTEX_BIT));
-	addStage(new ShaderStageBase("Resources\\Shaders\\DrawText\\frag.spv", asset, vulkanData, VK_SHADER_STAGE_FRAGMENT_BIT));
+	addStage(new ShaderStageBase("Resources\\Shaders\\DrawText\\frag.spv", asset, vulkanData, VK_SHADER_STAGE_FRAGMENT_BIT,
+	{ 0, 1}, SpecConstantBuffer::getEntry().data(), &specConstBuffer, sizeof(SpecConstantBuffer)));
 
 	initializeDescriptorSetLayout();
 	initializeDescriptorPool();

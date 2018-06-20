@@ -23,7 +23,7 @@ void main() {
 
 	if(gl_InvocationID == 0) {
 
-		float s = 24.0;
+		float s = 1.0;//64.0;
 
 		gl_TessLevelInner[0] = s;
 		gl_TessLevelInner[1] = s;

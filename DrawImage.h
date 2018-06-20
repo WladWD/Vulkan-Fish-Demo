@@ -35,10 +35,11 @@ namespace Engine {
 		VkBuffer vertexBuffer, indexBuffer;
 		VkDeviceMemory vertexBufferMemory, indexBufferMemory;
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		VkImageView sourceImageView;
+		/*VkImageView sourceImageView;
 		VkImage sourceImage;
 		VkDeviceMemory imageMemory;
-		VkExtent3D sourceExtent;
+		VkExtent3D sourceExtent;*/
+		ImageManager::ImageData sourceImage;
 
 		VkImageView nomalSourceImageView;
 		VkImage nomalSourceImage;

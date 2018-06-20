@@ -1,11 +1,20 @@
 #include "SamplersContainer.h"
 
-Samplers::SamplersContainer::SamplersContainer(VkDevice device): device(device), minMaxMag_Linear_UVW_Wrap(VK_NULL_HANDLE){
+
+Samplers::SamplersContainer::SamplersContainer(VkDevice device): device(device) {
 	initializeMinMaxMagLinearUVWWrap();
 }
 
 Samplers::SamplersContainer::~SamplersContainer() {
-	vkDestroySampler(device, minMaxMag_Linear_UVW_Wrap, nullptr);
+	for (uint32_t i = 0; i < MaxMipLevels; ++i) {
+		for (uint32_t j = 0; j < MaxMipLevels; ++j) {
+			vkDestroySampler(device, minMaxMag_Linear_UVW_Wrap[i][j], nullptr);
+		}
+	}
+}
+
+const VkSampler &Samplers::SamplersContainer::getMinMaxMag_Linear_UVW_Wrap(uint32_t minMipLevel, uint32_t maxMipLevel) {
+	return minMaxMag_Linear_UVW_Wrap[minMipLevel][maxMipLevel];
 }
 
 void Samplers::SamplersContainer::initializeMinMaxMagLinearUVWWrap(void) {
@@ -22,12 +31,17 @@ void Samplers::SamplersContainer::initializeMinMaxMagLinearUVWWrap(void) {
 	samplerInfo.compareEnable = VK_FALSE;
 	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	samplerInfo.mipLodBias = 0.0;
-	samplerInfo.minLod = 0.0;
-	samplerInfo.maxLod = 0.0;
 	samplerInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerInfo.mipLodBias = 0.0;
 
-	if (vkCreateSampler(device, &samplerInfo, nullptr, &minMaxMag_Linear_UVW_Wrap) != VK_SUCCESS) {
-		throw std::runtime_error("[DBG] Failed create sampler");
+	for (uint32_t i = 0; i < MaxMipLevels; ++i) {
+		for (uint32_t j = 0; j < MaxMipLevels; ++j) {
+			samplerInfo.minLod = static_cast<float>(i);
+			samplerInfo.maxLod = static_cast<float>(j);
+
+			if (vkCreateSampler(device, &samplerInfo, nullptr, &minMaxMag_Linear_UVW_Wrap[i][j]) != VK_SUCCESS) {
+				throw std::runtime_error("[DBG] Failed create sampler");
+			}
+		}
 	}
 }

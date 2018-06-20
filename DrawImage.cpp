@@ -15,10 +15,10 @@ Engine::DrawImage::~DrawImage() {
 	vkFreeMemory(vulkanData->device, vertexBufferMemory, nullptr);
 	vkFreeMemory(vulkanData->device, indexBufferMemory, nullptr);
 
-	vkDestroyImageView(vulkanData->device, sourceImageView, nullptr);
+	/*vkDestroyImageView(vulkanData->device, sourceImageView, nullptr);
 	vkDestroyImage(vulkanData->device, sourceImage, nullptr);
 	vkFreeMemory(vulkanData->device, imageMemory, nullptr);
-
+*/
 	vkDestroyImageView(vulkanData->device, nomalSourceImageView, nullptr);
 	vkDestroyImage(vulkanData->device, nomalSourceImage, nullptr);
 	vkFreeMemory(vulkanData->device, nomalImageMemory, nullptr);
@@ -27,9 +27,18 @@ Engine::DrawImage::~DrawImage() {
 }
 
 void Engine::DrawImage::initialize(const Asset::AssetLoader *assetLoader) {
-	loadImage("Resources\\Images\\bricks2.dds", assetLoader, sourceImage, imageMemory, sourceImageView, sourceExtent);
+	//loadImage("Resources\\Images\\bricks2.dds", assetLoader, sourceImage, imageMemory, sourceImageView, sourceExtent);
 	loadImage("Resources\\Images\\bricks2_normal.dds", assetLoader, nomalSourceImage, nomalImageMemory, nomalSourceImageView, nomalSourceExtent);
 	loadImage("Resources\\Images\\bricks2_disp.dds", assetLoader, depthSourceImage, depthImageMemory, depthSourceImageView, depthSourceExtent);
+
+	vulkanEngineData->imageContainer->addImage("Resources\\Images\\initialize.dds");
+	sourceImage = vulkanEngineData->imageContainer->getImageDataByName(std::string("Resources\\Images\\initialize.dds"));
+	/*sourceImage = val.image;
+	imageMemory = val.imageMemory;
+	sourceImageView = val.imageView;
+	sourceExtent = val.imageExtent;*/
+	
+
 	Shader::DrawImageShaderPipeline::ConstBuffer constBuffer;
 	constBuffer.color = glm::vec4(1.0, 1.0, 0.0, 1.0);
 	constBuffer.scale = 2.0;
@@ -56,7 +65,7 @@ void Engine::DrawImage::loadImage(const char * imageName, const Asset::AssetLoad
 	VkExtent3D extent = { static_cast<uint32_t>(tex.extent().x), static_cast<uint32_t>(tex.extent().y), static_cast<uint32_t>(tex.extent().z) };
 	auto f = tex.format();
 	VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
-	createImage(static_cast<const char *>(tex.data()), tex.size(), extent, format, sourceImage, imageMemory, sourceImageView, sourceExtent);
+	createImage(static_cast<const char *>(tex.data()), static_cast<uint32_t>(tex.size()), extent, format, sourceImage, imageMemory, sourceImageView, sourceExtent);
 
 	delete[] data;
 }
@@ -81,10 +90,10 @@ void Engine::DrawImage::createImage(const char * data, uint32_t size, VkExtent3D
 	imageInfo.extent = extent;
 	imageInfo.format = format;
 
-	this->sourceExtent = extent;
+	//this->sourceExtent = extent;
 
-	VulkanInitialize::createImage2D(vulkanData, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT, &imageInfo, sourceImage, imageMemory);
-	VulkanInitialize::initializeImage2D(vulkanData, vulkanData->commandPool, data, size, extent, format, VK_IMAGE_ASPECT_COLOR_BIT, 1, sourceImage);
+	VulkanInitialize::createImage(vulkanData, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT, &imageInfo, sourceImage, imageMemory);
+	VulkanInitialize::initializeImage(vulkanData, vulkanData->commandPool, data, size, extent, format, VK_IMAGE_ASPECT_COLOR_BIT, 1, sourceImage);
 
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -204,7 +213,7 @@ void Engine::DrawImage::initializePipeline(void) {
 
 	VkGraphicsPipelineCreateInfo mGraphicsPipelineCreateInfoStruct = {};
 	mGraphicsPipelineCreateInfoStruct.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	mGraphicsPipelineCreateInfoStruct.stageCount = shaderPipeline->getShaderStagesCount();
+	mGraphicsPipelineCreateInfoStruct.stageCount = static_cast<uint32_t>(shaderPipeline->getShaderStagesCount());
 	mGraphicsPipelineCreateInfoStruct.pStages = shaderPipeline->getShaderStages();
 	mGraphicsPipelineCreateInfoStruct.pVertexInputState = &mVertexInputStageCreateInfo;
 	mGraphicsPipelineCreateInfoStruct.pInputAssemblyState = &mInputAssemblyStateCreateInfo;
@@ -257,18 +266,18 @@ void Engine::DrawImage::initializeIndexBuffer(void) {
 void Engine::DrawImage::updateDescriptorSet(void) {
 	VkDescriptorImageInfo imageInfo = {};
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = sourceImageView;
-	imageInfo.sampler = vulkanEngineData->samplers->minMaxMag_Linear_UVW_Wrap;
+	imageInfo.imageView = sourceImage.imageView;
+	imageInfo.sampler = vulkanEngineData->samplers->getMinMaxMag_Linear_UVW_Wrap(0, sourceImage.levelCount - 1);
 
 	VkDescriptorImageInfo imageNormalInfo = {};
 	imageNormalInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageNormalInfo.imageView = nomalSourceImageView;
-	imageNormalInfo.sampler = vulkanEngineData->samplers->minMaxMag_Linear_UVW_Wrap;
+	imageNormalInfo.sampler = vulkanEngineData->samplers->getMinMaxMag_Linear_UVW_Wrap(0, 0);
 
 	VkDescriptorImageInfo imageDispInfo = {};
 	imageDispInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageDispInfo.imageView = depthSourceImageView;
-	imageDispInfo.sampler = vulkanEngineData->samplers->minMaxMag_Linear_UVW_Wrap;
+	imageDispInfo.sampler = vulkanEngineData->samplers->getMinMaxMag_Linear_UVW_Wrap(0, 0);
 
 	VkDescriptorBufferInfo bufferInfo = {};
 	bufferInfo.buffer = shaderPipeline->getUniformRotationBuffer();
@@ -326,7 +335,7 @@ void Engine::DrawImage::updateUniforms(void) {
 
 	buffer.mProjView = glm::perspective(1.0f, static_cast<float>(vulkanData->mSwapChainImageExtent.width) / static_cast<float>(vulkanData->mSwapChainImageExtent.height), 1.0f, 1000.0f);
 	buffer.mProjView[1][1] *= -1;
-	buffer.mProjView *= glm::lookAt(glm::vec3(0.0, 0.0, 2.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+	buffer.mProjView *= glm::lookAt(pushBuffer.camPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 	buffer.mProjView *= glm::rotate(glm::mat4(1.0), 0.0f, glm::vec3(0.0, 1.0, 0.0));
 	buffer.mWorld = glm::mat4(1.0);//glm::rotate(glm::mat4(1.0), deltaTime * 0.3f, glm::vec3(0.0, 1.0, 0.0));
 
@@ -338,11 +347,12 @@ void Engine::DrawImage::updatePushConstant(void) {
 	auto curTime = std::chrono::high_resolution_clock::now();
 	auto deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(curTime - begTime).count();
 
-	float r = 5.0;
-	float a = 0.0, b = glm::mix(2.5, 0.5, glm::sin(deltaTime) * 0.5 + 0.5);
+	float r = 1.5f, d = 0.3f;
+	float a = 0.0f, b = glm::mix(2.5f, 0.5f, glm::sin(deltaTime) * 0.5f + 0.5f);
 
 	pushBuffer.lightColor = glm::vec4(1.0);//glm::vec4(1.0, glm::sin(deltaTime * 2.0) * 0.1 + 0.9, 1.0, 1.0);
-	pushBuffer.lightPosition = glm::vec3(r * glm::cos(a) * glm::cos(b), r * glm::sin(a), r * glm::cos(a) * glm::sin(b));
+	pushBuffer.lightPosition = glm::vec3(r * glm::sin(deltaTime) * d, r * glm::cos(deltaTime) * d, r);//glm::vec3(r * glm::cos(a) * glm::cos(b), r * glm::sin(a), r * glm::cos(a) * glm::sin(b));
+	pushBuffer.camPos = pushBuffer.lightPosition * glm::vec3(2.0);//glm::vec3(0.0, 0.0, 3.0);
 }
 
 void Engine::DrawImage::draw(VkCommandBuffer commandBuffer) {

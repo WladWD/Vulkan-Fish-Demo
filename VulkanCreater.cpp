@@ -152,7 +152,7 @@ void VulkanInitialize::createInitializeDeviceLocalBuffer(const VulkanEngineAppli
 	vkFreeMemory(vulkanData->device, stagingMemory, nullptr);
 }
 
-void VulkanInitialize::createImage2D(const VulkanEngineApplication::VulkanData * vulkanData,
+void VulkanInitialize::createImage(const VulkanEngineApplication::VulkanData * vulkanData,
 	VkMemoryPropertyFlags memoryFlag,
 	const VkImageCreateInfo *imageInfo,
 	VkImage & image,
@@ -179,7 +179,7 @@ void VulkanInitialize::createImage2D(const VulkanEngineApplication::VulkanData *
 	vkBindImageMemory(vulkanData->device, image, imageMemory, 0);
 }
 
-void VulkanInitialize::initializeImage2D(const VulkanEngineApplication::VulkanData * vulkanData,
+void VulkanInitialize::initializeImage(const VulkanEngineApplication::VulkanData * vulkanData,
 	VkCommandPool commandPool,
 	const void * imageData,
 	VkDeviceSize imageDataSize,

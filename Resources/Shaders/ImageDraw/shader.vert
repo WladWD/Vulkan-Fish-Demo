@@ -30,7 +30,7 @@ void main() {
 	mat3 tr = mat3(transpose(inverse(ubo.mWorld)));
 	fNormal = tr * normal;
 	fTangent = tr * tangent;
-	fragTexCoord = inTexCoord;
+	fragTexCoord = vec2(inTexCoord.x, 1.0 - inTexCoord.y);
 }
 
 	

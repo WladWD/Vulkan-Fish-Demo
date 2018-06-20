@@ -1,21 +1,25 @@
 #include "VulkanEngine.h"
-
+#include "AssimpTest.h"
 
 Engine::VulkanEngine::VulkanEngine(const VulkanEngineApplication::VulkanData * vulkanData) : vulkanData(vulkanData) {
 	drawImage = new DrawImage(vulkanData, &vulkanEngineData);
 	drawFPS = new DrawFPS(vulkanData, &vulkanEngineData);
+
+	auto p = new Test::AssimpTest();
+	delete p;
 }
 
 Engine::VulkanEngine::~VulkanEngine() {
 	delete vulkanEngineData.quadBuffer;
 	delete vulkanEngineData.samplers;
+	delete vulkanEngineData.imageContainer;
 
 	delete drawImage;
 	delete drawFPS;
 }
 
 void Engine::VulkanEngine::initialize(const Asset::AssetLoader *assetLoader) {
-	initializeEngine();
+	initializeEngine(assetLoader);
 
 	drawImage->initialize(assetLoader);
 	drawFPS->initialize(assetLoader);
@@ -32,9 +36,10 @@ void Engine::VulkanEngine::pause(void) {
 void Engine::VulkanEngine::resume(void) {
 }
 
-void Engine::VulkanEngine::initializeEngine(void) {
+void Engine::VulkanEngine::initializeEngine(const Asset::AssetLoader *assetLoader) {
 	vulkanEngineData.samplers = new Samplers::SamplersContainer(vulkanData->device);
 	vulkanEngineData.quadBuffer = new Engine::QuadBuffer(vulkanData);
+	vulkanEngineData.imageContainer = new ImageManager::ImageContainer(assetLoader, vulkanData);
 }
 
 void Engine::VulkanEngine::drawToSwapChainTexture(void) {

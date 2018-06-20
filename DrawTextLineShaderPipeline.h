@@ -6,6 +6,7 @@ namespace Shader {
 	class DrawTextLineShaderPipeline : public ShaderPipeline {
 	public:
 		struct PushConstantBuffer;
+		struct SpecConstantBuffer;
 	private:
 		void initializePipelineLayout(void);
 		void initializeDescriptorPool(void);
@@ -14,7 +15,8 @@ namespace Shader {
 	public:
 		DrawTextLineShaderPipeline(
 			const Asset::AssetLoader *asset,
-			const VulkanEngineApplication::VulkanData *vulkanData);
+			const VulkanEngineApplication::VulkanData *vulkanData,
+			const SpecConstantBuffer &specConstBuffer);
 		~DrawTextLineShaderPipeline() = default;
 	};
 }

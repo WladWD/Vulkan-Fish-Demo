@@ -32,6 +32,11 @@
 #include <glm\gtc\matrix_transform.hpp>
 /////////////////////////////////////////////////////////////////////
 //Image Load Init
+#include <gli\texture2d.hpp>
+#include <gli\convert.hpp>
+#include <gli\generate_mipmaps.hpp>
+#include <gli\load.hpp>
+#include <gli\save.hpp>
 #include <gli\gli.hpp>
 /////////////////////////////////////////////////////////////////////
 //C++ Function

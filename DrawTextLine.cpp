@@ -21,7 +21,7 @@ void Engine::DrawTextLine::resize(void) {
 
 void Engine::DrawTextLine::initialize(const Asset::AssetLoader *assetLoader) {
 	loadImage("Resources\\Images\\font.dds", assetLoader);
-	shaderPipeline = new Shader::DrawTextLineShaderPipeline(assetLoader, vulkanData);
+	shaderPipeline = new Shader::DrawTextLineShaderPipeline(assetLoader, vulkanData, { 16, 16 });
 
 	updateDescriptorSet();
 	initializePipeline();
@@ -37,7 +37,7 @@ void Engine::DrawTextLine::loadImage(const char * imageName, const Asset::AssetL
 	VkExtent3D extent = { static_cast<uint32_t>(tex.extent().x), static_cast<uint32_t>(tex.extent().y), static_cast<uint32_t>(tex.extent().z) };
 	auto f = tex.format();
 	VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
-	createImage(static_cast<const char *>(tex.data()), tex.size(), extent, format);
+	createImage(static_cast<const char *>(tex.data()), static_cast<uint32_t>(tex.size()), extent, format);
 
 	delete[] data;
 }
@@ -64,8 +64,8 @@ void Engine::DrawTextLine::createImage(const char * data, uint32_t size, VkExten
 
 	this->sourceExtent = extent;
 
-	VulkanInitialize::createImage2D(vulkanData, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT, &imageInfo, sourceImage, imageMemory);
-	VulkanInitialize::initializeImage2D(vulkanData, vulkanData->commandPool, data, size, extent, format, VK_IMAGE_ASPECT_COLOR_BIT, 1, sourceImage);
+	VulkanInitialize::createImage(vulkanData, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT, &imageInfo, sourceImage, imageMemory);
+	VulkanInitialize::initializeImage(vulkanData, vulkanData->commandPool, data, size, extent, format, VK_IMAGE_ASPECT_COLOR_BIT, 1, sourceImage);
 
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -179,7 +179,7 @@ void Engine::DrawTextLine::initializePipeline(void) {
 
 	VkGraphicsPipelineCreateInfo mGraphicsPipelineCreateInfoStruct = {};
 	mGraphicsPipelineCreateInfoStruct.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	mGraphicsPipelineCreateInfoStruct.stageCount = shaderPipeline->getShaderStagesCount();
+	mGraphicsPipelineCreateInfoStruct.stageCount = static_cast<uint32_t>(shaderPipeline->getShaderStagesCount());
 	mGraphicsPipelineCreateInfoStruct.pStages = shaderPipeline->getShaderStages();
 	mGraphicsPipelineCreateInfoStruct.pVertexInputState = &mVertexInputStageCreateInfo;
 	mGraphicsPipelineCreateInfoStruct.pInputAssemblyState = &mInputAssemblyStateCreateInfo;
@@ -206,7 +206,7 @@ void Engine::DrawTextLine::updateDescriptorSet(void) {
 	VkDescriptorImageInfo imageInfo = {};
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageInfo.imageView = sourceImageView;
-	imageInfo.sampler = vulkanEngineData->samplers->minMaxMag_Linear_UVW_Wrap;
+	imageInfo.sampler = vulkanEngineData->samplers->getMinMaxMag_Linear_UVW_Wrap(0, 0);
 
 	std::array<VkWriteDescriptorSet, 1> writeDescriptors = {};
 	writeDescriptors[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
