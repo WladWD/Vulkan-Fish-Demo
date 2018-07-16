@@ -1,12 +1,10 @@
 #include "VulkanEngine.h"
-#include "AssimpTest.h"
 
-Engine::VulkanEngine::VulkanEngine(const VulkanEngineApplication::VulkanData * vulkanData) : vulkanData(vulkanData) {
+Engine::VulkanEngine::VulkanEngine(const VulkanEngineApplication::VulkanData * vulkanData):
+	vulkanData(vulkanData), scene(nullptr) {
 	drawImage = new DrawImage(vulkanData, &vulkanEngineData);
 	drawFPS = new DrawFPS(vulkanData, &vulkanEngineData);
 
-	auto p = new Test::AssimpTest();
-	delete p;
 }
 
 Engine::VulkanEngine::~VulkanEngine() {
@@ -20,6 +18,13 @@ Engine::VulkanEngine::~VulkanEngine() {
 
 void Engine::VulkanEngine::initialize(const Asset::AssetLoader *assetLoader) {
 	initializeEngine(assetLoader);
+
+	std::unique_ptr<LoadManager::LoadModel> loader =
+		std::unique_ptr<LoadManager::LoadModel>(
+			new LoadManager::LoadModel(
+				assetLoader,
+				vulkanData));
+	scene = loader->getLoadedScene();
 
 	drawImage->initialize(assetLoader);
 	drawFPS->initialize(assetLoader);

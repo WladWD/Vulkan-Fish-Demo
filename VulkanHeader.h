@@ -5,8 +5,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#define JNIEnv unsigned char
-#define jobject int
+//#define JNIEnv unsigned char
+//#define jobject int
 
 #else 
 //Android Init
@@ -24,6 +24,16 @@
 #include "vulkan_wrapper.h"
 
 #endif // !ANDROID
+
+
+#ifdef _WIN32
+
+#define USE_ASSIMP
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
+#endif
 /////////////////////////////////////////////////////////////////////
 //Math Init
 #define GLM_FORCE_RADIANS

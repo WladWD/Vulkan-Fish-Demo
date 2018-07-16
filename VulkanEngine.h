@@ -1,5 +1,6 @@
 #include "DrawImage.h"
 #include "DrawFPS.h"
+#include "LoadModel.h"
 
 #pragma once
 namespace Engine 
@@ -8,6 +9,7 @@ namespace Engine
 		const VulkanEngineApplication::VulkanData * vulkanData;
 		VulkanEngineApplication::VulkanEngineData vulkanEngineData;
 		
+		std::shared_ptr<Draw::Model> scene;
 		DrawImage *drawImage;
 		DrawFPS *drawFPS;
 
