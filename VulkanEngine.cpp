@@ -23,7 +23,9 @@ void Engine::VulkanEngine::initialize(const Asset::AssetLoader *assetLoader) {
 		std::unique_ptr<LoadManager::LoadModel>(
 			new LoadManager::LoadModel(
 				assetLoader,
-				vulkanData));
+				vulkanData,
+				&vulkanEngineData));
+	loader->addModel("bb8.obj");//TODO add real file name
 	scene = loader->getLoadedScene();
 
 	drawImage->initialize(assetLoader);

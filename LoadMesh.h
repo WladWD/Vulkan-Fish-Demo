@@ -1,5 +1,6 @@
 #include "ImageContainer.h"
 #include "DrawData.h"
+#include "MaterialLoader.h"
 
 #ifdef USE_ASSIMP
 #pragma once
@@ -11,6 +12,10 @@ namespace LoadManager {
 		std::shared_ptr<Draw::Model> scene;
 
 		uint32_t loadDrawType;
+
+		static uint32_t startIndex;
+		static uint32_t startVertex;
+
 	public:
 		LoadMesh(const std::shared_ptr<ImageManager::ImageLoader> &imageLoader,
 			const std::shared_ptr<Draw::Model> &scene,

@@ -9,7 +9,8 @@ namespace LoadManager {
 		
 	public:
 		LoadModel(const Asset::AssetLoader * assetLoader, 
-			const VulkanEngineApplication::VulkanData * vulkanData);
+			const VulkanEngineApplication::VulkanData * vulkanData,
+			const VulkanEngineApplication::VulkanEngineData *vulkanEngineData);
 		~LoadModel() = default;
 
 		void addModel(std::string model);

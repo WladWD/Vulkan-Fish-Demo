@@ -9,8 +9,11 @@ namespace LoadManager {
 		std::vector<Draw::Vertex> vertexBuffer;
 		std::vector<uint16_t> indexBuffer;
 
+		void addVertexToBuffer(const aiMesh *paiMesh);
+		void addIndexToBuffer(const aiMesh *paiMesh);
 	public:
-		LoadDiffuseMesh(const std::shared_ptr<ImageManager::ImageLoader> &imageLoader,
+		LoadDiffuseMesh(
+			const std::shared_ptr<ImageManager::ImageLoader> &imageLoader,
 			const std::shared_ptr<Draw::Model> &scene);
 		~LoadDiffuseMesh() = default;
 
