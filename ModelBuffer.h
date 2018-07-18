@@ -12,7 +12,6 @@ namespace Draw {
 		VkBuffer vertexBuffer;
 		VkBuffer indexBuffer;
 	public:
-	
 		ModelBuffer(const VulkanEngineApplication::VulkanData * vulkanData,
 			VkBuffer vertexBuffer, VkBuffer indexBuffer,
 			VkDeviceMemory vertexBufferMemory, VkDeviceMemory indexBufferMemory);

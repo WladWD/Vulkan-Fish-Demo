@@ -4,12 +4,19 @@
 #pragma once
 namespace LoadManager {
 	class LoadModelAssimp {
+		const VulkanEngineApplication::VulkanData * vulkanData;
+
 		std::unique_ptr<LoadManager::MaterialLoader> materialLoader;
 		std::shared_ptr<ImageManager::ImageLoader> imageLoader;
 		std::vector<std::unique_ptr<LoadMesh>> loadMesh;
 
+		VkBuffer vertexBuffer, indexBuffer;
+		VkDeviceMemory vertexBufferMemory, indexBufferMemory;
+
 		std::shared_ptr<Draw::Model> scene;
 
+		void packVertexBuffer(void);
+		void packIndexBuffer(void);
 	public:
 		LoadModelAssimp(const Asset::AssetLoader * assetLoader,
 			const VulkanEngineApplication::VulkanData * vulkanData,

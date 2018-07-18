@@ -25,7 +25,10 @@ void Engine::VulkanEngine::initialize(const Asset::AssetLoader *assetLoader) {
 				assetLoader,
 				vulkanData,
 				&vulkanEngineData));
-	loader->addModel("bb8.obj");//TODO add real file name
+
+	loader->addModel("Resources\\Models\\bb8\\bb8.obj");//TODO add real file name
+
+	loader->packScene();
 	scene = loader->getLoadedScene();
 
 	drawImage->initialize(assetLoader);
