@@ -6,6 +6,7 @@
 #include "DrawImagePushConstant.h"
 #include "VulkanCreater.h"
 #include "VulkanEngineData.h"
+#include "DrawDifferedDiffuseShaderPipeline.h"
 
 #include <chrono>
 

@@ -1,5 +1,8 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
+#extension GL_GOOGLE_include_directive : require
+
+#include "utils/inc.glsl"
 
 //Inputs
 layout(location = 0) in vec2 texCoord;
@@ -20,9 +23,9 @@ layout (push_constant) uniform push_constants_t {
 //Output
 layout(location = 0) out vec4 gOut;
 
-int getByte(in uint value, int offset) {
+/*int getByte(in uint value, int offset) {
 	return int(value >> (offset * 8) & 0x000000ff);
-}
+}*/
 
 void main() {
 	float d = texCoord.x * float(getByte(push_constants.uData[0], 0));

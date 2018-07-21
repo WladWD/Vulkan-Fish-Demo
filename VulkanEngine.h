@@ -29,3 +29,5 @@ namespace Engine
 	};
 }
 
+//SPRIV-V documentetion
+//https://vulkan.lunarg.com/doc/sdk/1.0.26.0/linux/spirv_toolchain.html

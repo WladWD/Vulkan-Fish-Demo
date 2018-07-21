@@ -31,6 +31,8 @@ void Engine::DrawImage::initialize(const Asset::AssetLoader *assetLoader) {
 	loadImage("Resources\\Images\\bricks2_normal.dds", assetLoader, nomalSourceImage, nomalImageMemory, nomalSourceImageView, nomalSourceExtent);
 	loadImage("Resources\\Images\\bricks2_disp.dds", assetLoader, depthSourceImage, depthImageMemory, depthSourceImageView, depthSourceExtent);
 
+	//auto ptr = new Shader::DrawDifferedDiffuseShaderPipeline(assetLoader, vulkanData);
+
 	vulkanEngineData->imageContainer->addImage("Resources\\Images\\initialize.dds");
 	sourceImage = vulkanEngineData->imageContainer->getImageDataByName(std::string("Resources\\Images\\initialize.dds"));
 	/*sourceImage = val.image;

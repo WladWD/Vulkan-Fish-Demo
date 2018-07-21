@@ -4,7 +4,8 @@ Draw::ModelBuffer::ModelBuffer(
 	const VulkanEngineApplication::VulkanData * vulkanData,
 	VkBuffer vertexBuffer, VkBuffer indexBuffer,
 	VkDeviceMemory vertexBufferMemory, VkDeviceMemory indexBufferMemory):
-	vulkanData(vulkanData),	vertexBuffer(vertexBuffer), indexBuffer(indexBuffer) { }
+	vulkanData(vulkanData),	vertexBuffer(vertexBuffer), indexBuffer(indexBuffer),
+	vertexBufferMemory(vertexBufferMemory), indexBufferMemory(indexBufferMemory) { }
 
 Draw::ModelBuffer::~ModelBuffer() {
 	vkDestroyBuffer(vulkanData->device, vertexBuffer, nullptr);
