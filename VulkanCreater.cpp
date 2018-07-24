@@ -46,7 +46,7 @@ void VulkanInitialize::endSingleTimeCommand(const VulkanEngineApplication::Vulka
 	vkFreeCommandBuffers(vulkanData->device, commandPool, 1, &commandBuffer);
 }
 
-void VulkanInitialize::transitionImageLayout(VkImage image, VkFormat format,
+void VulkanInitialize::transitionImageLayout(VkImage image,
 	VkImageLayout oldLayout, VkImageLayout newLayout,
 	VkAccessFlags srcAccess, VkAccessFlags dstAccess,
 	VkPipelineStageFlags srcStageMack, VkPipelineStageFlags dstStageMack,
@@ -60,7 +60,7 @@ void VulkanInitialize::transitionImageLayout(VkImage image, VkFormat format,
 	imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	imageBarrier.image = image;
-	imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageBarrier.subresourceRange.aspectMask = aspect;
 	imageBarrier.subresourceRange.baseArrayLayer = 0;
 	imageBarrier.subresourceRange.baseMipLevel = 0;
 	imageBarrier.subresourceRange.layerCount = 1;
@@ -203,7 +203,7 @@ void VulkanInitialize::initializeImage(const VulkanEngineApplication::VulkanData
 	memcpy(mapData, imageData, static_cast<size_t>(imageDataSize));
 	vkUnmapMemory(vulkanData->device, stagingMemory);
 
-	transitionImageLayout(image, format,
+	transitionImageLayout(image, 
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
 		0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_ASPECT_COLOR_BIT, commandBuffer);

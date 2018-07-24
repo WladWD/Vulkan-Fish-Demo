@@ -154,11 +154,11 @@ void VulkanEngineApplication::VulkanSwapchain::createDepthBuffer(void) {
 		aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
 	}
 
-	VulkanInitialize::transitionImageLayout(vulkanData->depthBuffer, vulkanData->depthFormat,
+	VulkanInitialize::transitionImageLayout(vulkanData->depthBuffer,
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 
 		0, 0, 
 		0, 0, 
-		aspect, 
+		aspect,
 		commandBuffer);
 	VulkanInitialize::endSingleTimeCommand(vulkanData, vulkanData->commandPool, commandBuffer);
 }

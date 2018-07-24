@@ -5,10 +5,10 @@
 namespace Draw {
 	enum class DrawDataTypes {
 		DrawDataDiffuse,
-		DrawDataNormal,
+		DrawDataDiffuseNormal,
 		DrawDataTesselation,
 		DrawDataDiffuseSpecular,
-		DrawDataNormalSpecular,
+		DrawDataDiffuseNormalSpecular,
 		DrawDataTesselationSpecular,
 		DrawDataPBR,
 		DrawDataScinAnim,

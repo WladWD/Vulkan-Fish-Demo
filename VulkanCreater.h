@@ -7,7 +7,7 @@ namespace VulkanInitialize {
 	VkCommandBuffer beginSingleTimeCommand(const VulkanEngineApplication::VulkanData * vulkanData, VkCommandPool commandPool);
 	void endSingleTimeCommand(const VulkanEngineApplication::VulkanData * vulkanData, VkCommandPool commandPool, VkCommandBuffer commandBuffer);
 
-	void transitionImageLayout(VkImage image, VkFormat format,
+	void transitionImageLayout(VkImage image,
 		VkImageLayout oldLayout, VkImageLayout newLayout,
 		VkAccessFlags srcAccess, VkAccessFlags dstAccess,
 		VkPipelineStageFlags srcStageMack, VkPipelineStageFlags dstStageMack,
