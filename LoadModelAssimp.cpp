@@ -27,8 +27,13 @@ void LoadManager::LoadModelAssimp::addModel(std::string model) {
 	const aiScene *pScene = Importer.ReadFile(model.c_str(),
 		aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_FlipUVs | aiProcess_GenSmoothNormals);// | aiProcess_OptimizeMeshes);
 
+	auto idx = model.find_last_of('\\');
+	if (idx == std::string::npos) model = "";
+	else model = model.substr(0, idx + 1);
+
 	materialLoader->addMaterials(pScene, model);
 	scene->materials = materialLoader->getMaterials();
+	scene->mWorld = glm::mat4(1.0);
 
 	for (const auto &loader : loadMesh) {
 		if (loader != nullptr) {
@@ -95,15 +100,15 @@ void LoadManager::LoadModelAssimp::packIndexBuffer(void) {
 
 	for (const auto &loader : loadMesh) {
 		if (loader != nullptr) {
-			bufferSize += loader->getRawVertexDataSize();
+			bufferSize += loader->getRawIndexDataSize();
 		}
 	}
 
 	std::vector<int8_t> index(bufferSize);
 	for (const auto &loader : loadMesh) {
 		if (loader != nullptr) {
-			memcpy(index.data() + bufferOffset, loader->getRawVertexData(), loader->getRawVertexDataSize());
-			bufferOffset += loader->getRawVertexDataSize();
+			memcpy(index.data() + bufferOffset, loader->getRawIndexData(), loader->getRawIndexDataSize());
+			bufferOffset += loader->getRawIndexDataSize();
 		}
 	}
 

@@ -7,7 +7,7 @@ namespace LoadManager {
 	class LoadDiffuseMesh: public LoadMesh {
 
 		std::vector<Draw::Vertex> vertexBuffer;
-		std::vector<uint16_t> indexBuffer;
+		std::vector<uint32_t> indexBuffer;
 
 		void addVertexToBuffer(const aiMesh *paiMesh);
 		void addIndexToBuffer(const aiMesh *paiMesh);

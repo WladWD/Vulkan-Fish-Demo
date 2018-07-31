@@ -17,6 +17,7 @@ namespace Shader {
 		std::shared_ptr<PushConstantBuffer> pushConstantBufferData;
 
 		virtual void initializeTextureDescriptorSetLayout(void) = 0;
+		void initializeUniformBufferDescriptor(void);
 		void initializeUniformBuffer(void);
 		void initializeDescriptorPool(uint32_t texCount);
 		void initializePipelineLayout(void);

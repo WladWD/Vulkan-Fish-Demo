@@ -1,7 +1,7 @@
 #include "VulkanEngine.h"
 
 Engine::VulkanEngine::VulkanEngine(const VulkanEngineApplication::VulkanData * vulkanData):
-	vulkanData(vulkanData), scene(nullptr) {
+	vulkanData(vulkanData), scene(nullptr), drawDiffered(nullptr) {
 	drawImage = new DrawImage(vulkanData, &vulkanEngineData);
 	drawFPS = new DrawFPS(vulkanData, &vulkanEngineData);
 
@@ -19,6 +19,7 @@ Engine::VulkanEngine::~VulkanEngine() {
 void Engine::VulkanEngine::initialize(const Asset::AssetLoader *assetLoader) {
 	initializeEngine(assetLoader);
 
+
 	std::unique_ptr<LoadManager::LoadModel> loader =
 		std::unique_ptr<LoadManager::LoadModel>(
 			new LoadManager::LoadModel(
@@ -26,11 +27,11 @@ void Engine::VulkanEngine::initialize(const Asset::AssetLoader *assetLoader) {
 				vulkanData,
 				&vulkanEngineData));
 
-	loader->addModel("Resources\\Models\\bb8\\bb8.obj");//TODO add real file name
-
+	loader->addModel("Resources\\Models\\Bus\\Bus.obj"); //coin\\chinese_coin.obj");\\bb8\\bb8.obj");
 	loader->packScene();
 	scene = loader->getLoadedScene();
 
+	drawDiffered = std::make_unique<DrawDiffered::DrawDifferedManager>(vulkanData, &vulkanEngineData, scene, assetLoader);
 	drawImage->initialize(assetLoader);
 	drawFPS->initialize(assetLoader);
 }
@@ -87,9 +88,24 @@ void Engine::VulkanEngine::draw(void) {
 	vkBeginCommandBuffer(vulkanData->commandBuffer[vulkanData->mImageIndex], &mCommandBufferBeginInfo);
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Draw Deffered
-
+	//if (drawDiffered != nullptr) {
+	//	//VkCommandBuffer commandBufferT = VulkanInitialize::beginSingleTimeCommand(vulkanData, vulkanData->commandPool);
+	//	drawDiffered->draw(vulkanData->commandBuffer[vulkanData->mImageIndex]);//commandBufferT);
+	//	
+	//	//vkCmdBlitImage();
+	//	//VulkanInitialize::endSingleTimeCommand(vulkanData, vulkanData->commandPool, commandBufferT);
+	//}
 	//Draw to Swapchain
 	drawToSwapChainTexture();
+
+	if (drawDiffered != nullptr) {
+		//VkCommandBuffer commandBufferT = VulkanInitialize::beginSingleTimeCommand(vulkanData, vulkanData->commandPool);
+		drawDiffered->draw(vulkanData->commandBuffer[vulkanData->mImageIndex]);//commandBufferT);
+
+																			   //vkCmdBlitImage();
+																			   //VulkanInitialize::endSingleTimeCommand(vulkanData, vulkanData->commandPool, commandBufferT);
+	}
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	if (vkEndCommandBuffer(vulkanData->commandBuffer[vulkanData->mImageIndex]) != VK_SUCCESS) {
 		throw std::runtime_error("[DBG]\tFailed to record command buffer!");

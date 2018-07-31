@@ -19,6 +19,26 @@ Shader::DrawDifferedShaderPipeline::~DrawDifferedShaderPipeline() {
 	vkFreeMemory(vulkanData->device, uniformBufferMemory, nullptr);
 }
 
+void Shader::DrawDifferedShaderPipeline::initializeUniformBufferDescriptor(void) {
+	VkDescriptorBufferInfo bufferInfo = {};
+	bufferInfo.buffer = uniformBuffer;
+	bufferInfo.offset = 0;
+	bufferInfo.range = sizeof(Shader::DrawDifferedShaderPipeline::UniformBuffer);
+
+	std::array<VkWriteDescriptorSet, 1> writeDescriptors = {};
+	writeDescriptors[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptors[0].dstSet = getDescriptorSets()[0];
+	writeDescriptors[0].dstBinding = 0;
+	writeDescriptors[0].dstArrayElement = 0;
+	writeDescriptors[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	writeDescriptors[0].descriptorCount = 1;
+	writeDescriptors[0].pBufferInfo = &bufferInfo;
+	writeDescriptors[0].pImageInfo = nullptr;
+	writeDescriptors[0].pTexelBufferView = nullptr;
+
+	vkUpdateDescriptorSets(vulkanData->device, static_cast<uint32_t>(writeDescriptors.size()), writeDescriptors.data(), 0, nullptr);
+}
+
 void Shader::DrawDifferedShaderPipeline::initializeUniformBuffer(void) {
 	VkDeviceSize uniformBufferSize = sizeof(Shader::DrawDifferedShaderPipeline::UniformBuffer);
 	VulkanInitialize::createBuffer(vulkanData, uniformBufferSize,

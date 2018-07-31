@@ -40,7 +40,12 @@ void VulkanInitialize::endSingleTimeCommand(const VulkanEngineApplication::Vulka
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffer;
 
-	vkQueueSubmit(vulkanData->graphicsQueue[0], 1, &submitInfo, VK_NULL_HANDLE);
+	VkResult error = vkQueueSubmit(vulkanData->graphicsQueue[0], 1, &submitInfo, VK_NULL_HANDLE);
+	if (error != VK_SUCCESS) {
+		throw std::runtime_error("[DGB]\tFailed to submit draw command to buffer!");
+	}
+
+	//vkQueueSubmit(vulkanData->graphicsQueue[0], 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(vulkanData->graphicsQueue[0]);
 
 	vkFreeCommandBuffers(vulkanData->device, commandPool, 1, &commandBuffer);

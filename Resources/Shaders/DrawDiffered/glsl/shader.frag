@@ -30,7 +30,7 @@ void main() {
 	//if (!gl_FrontFacing)normal = -normal;
 	vec4 diffuseColor = texture(diffuseTex, texCoord);
 	
-	gOut0 = vec4(normal, color.specularColor.a);
+	gOut0 = vec4(normal, color.specularColor.a);//vec4(texCoord, 0.0, 1.0);//
 	gOut1 = vec4(vec3(color.diffuseColor * diffuseColor), color.diffuseColor.a);
 	gOut2 = vec4(color.specularColor.rgb, 1.0);
 }

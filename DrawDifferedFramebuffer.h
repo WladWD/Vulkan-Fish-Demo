@@ -6,7 +6,7 @@ namespace Draw {
 		const VulkanEngineApplication::VulkanData * vulkanData;
 		VkRenderPass renderPass;
 		VkFramebuffer framebuffer;
-		std::vector<std::unique_ptr<Texture>> framebufferTextures;
+		VkExtent3D framebufferSize;
 
 		void createRenderPass(void);
 		void createFramebufferTextures(uint32_t width, uint32_t height);
@@ -18,10 +18,14 @@ namespace Draw {
 			uint32_t height);
 		~DrawDifferedFramebuffer();
 
+		std::vector<std::unique_ptr<Texture>> framebufferTextures;
+
+
 		void resize(uint32_t width, uint32_t height) = delete;
 
 		VkRenderPass getRenderPass(void) const;
 		VkFramebuffer getFramebuffer(void) const;
+		VkExtent3D getFramebufferSize(void) const;
 	};
 }
 

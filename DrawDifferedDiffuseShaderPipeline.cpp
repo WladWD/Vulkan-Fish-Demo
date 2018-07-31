@@ -15,6 +15,7 @@ Shader::DrawDifferedDiffuseShaderPipeline::DrawDifferedDiffuseShaderPipeline(
 	initializeDescriptorSet();
 	initializePipelineLayout();
 	initializeUniformBuffer();
+	initializeUniformBufferDescriptor();
 }
 
 //Shader::DrawDifferedDiffuseShaderPipeline::~DrawDifferedDiffuseShaderPipeline() {

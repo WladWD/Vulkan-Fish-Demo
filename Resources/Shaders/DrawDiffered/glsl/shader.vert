@@ -4,7 +4,7 @@
 //Inputs
 layout (location = 0) in vec3 vPosition;
 layout (location = 1) in vec3 vNormal;
-layout (location = 3) in vec2 vTex;
+layout (location = 2) in vec2 vTex;
 
 //Outputs
 layout(location = 0) out vec3 wNormal;
@@ -24,7 +24,7 @@ void main() {
 	vec3 wPosition = vec3(uniformBuffer.mWorld * vec4(vPosition, 1.0));
 
 	wNormal = vec3(uniformBuffer.mWorldInvTransp * vec4(vNormal, 0.0));
-	texCoord = vec2(uniformBuffer.mTexTransform * vec4(texCoord, 1.0, 0.0));
+	texCoord = vec2(uniformBuffer.mTexTransform * vec4(vTex, 1.0, 0.0));
 	wEyeDir = wPosition - vec3(uniformBuffer.cameraPosition);
 
 	gl_Position = uniformBuffer.mProjView * vec4(wPosition, 1.0);

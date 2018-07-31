@@ -7,7 +7,7 @@ Draw::DrawDifferedFramebuffer::DrawDifferedFramebuffer(
 	vulkanData(vulkanData), renderPass(VK_NULL_HANDLE), 
 	framebuffer(VK_NULL_HANDLE) {
 
-	framebufferTextures.resize(4);
+	framebufferTextures.resize(4);//3
 	createRenderPass();
 	createFramebufferTextures(width, height);
 	createFramebuffer();
@@ -27,17 +27,17 @@ void Draw::DrawDifferedFramebuffer::createRenderPass(void) {
 	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_UNDEFINED;// VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentDescription mAttachmentDescription = {};
-	mAttachmentDescription.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	mAttachmentDescription.format = VK_FORMAT_R8G8B8A8_UNORM;//R32G32B32A32_SFLOAT;
 	mAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
 	mAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	mAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	mAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	mAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	mAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	mAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	mAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;// VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentReference depthAttachmentReference = {};
 	depthAttachmentReference.attachment = 3;
@@ -55,14 +55,7 @@ void Draw::DrawDifferedFramebuffer::createRenderPass(void) {
 	mSubpassStruct.pColorAttachments = mColorAttachmentReference.data();
 	mSubpassStruct.pDepthStencilAttachment = &depthAttachmentReference;
 
-	std::array<VkAttachmentDescription, 4> attachment = { mAttachmentDescription, mAttachmentDescription, mAttachmentDescription, depthAttachment };
-
-	VkRenderPassCreateInfo mRenderPassCreateInfoStruct = {};
-	mRenderPassCreateInfoStruct.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	mRenderPassCreateInfoStruct.attachmentCount = static_cast<uint32_t>(attachment.size());
-	mRenderPassCreateInfoStruct.pAttachments = attachment.data();
-	mRenderPassCreateInfoStruct.subpassCount = 1;
-	mRenderPassCreateInfoStruct.pSubpasses = &mSubpassStruct;
+	std::array<VkAttachmentDescription, 4> attachment = { mAttachmentDescription, mAttachmentDescription, mAttachmentDescription , depthAttachment };
 
 	VkSubpassDependency mDependency = {};
 	mDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -72,8 +65,14 @@ void Draw::DrawDifferedFramebuffer::createRenderPass(void) {
 	mDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	mDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
 
-	mRenderPassCreateInfoStruct.dependencyCount = 1;
-	mRenderPassCreateInfoStruct.pDependencies = &mDependency;
+	VkRenderPassCreateInfo mRenderPassCreateInfoStruct = {};
+	mRenderPassCreateInfoStruct.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	mRenderPassCreateInfoStruct.attachmentCount = static_cast<uint32_t>(attachment.size());
+	mRenderPassCreateInfoStruct.pAttachments = attachment.data();
+	mRenderPassCreateInfoStruct.subpassCount = 1;
+	mRenderPassCreateInfoStruct.pSubpasses = &mSubpassStruct;
+	mRenderPassCreateInfoStruct.dependencyCount = 0;// 1;
+	mRenderPassCreateInfoStruct.pDependencies = nullptr;// &mDependency;
 
 	if (vkCreateRenderPass(vulkanData->device, &mRenderPassCreateInfoStruct, nullptr, &renderPass) != VK_SUCCESS) {
 		throw std::runtime_error("[DBG]\tFailed to create render pass!");
@@ -97,8 +96,8 @@ void Draw::DrawDifferedFramebuffer::createFramebufferTextures(uint32_t width, ui
 	imageInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 	imageInfo.extent = { width, height, 1};
-	imageInfo.mipLevels = Texture::getMipCount(imageInfo.extent);
-	imageInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	imageInfo.mipLevels = 1;//Texture::getMipCount(imageInfo.extent);
+	imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;//VK_FORMAT_R32G32B32A32_SFLOAT;
 
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -115,9 +114,9 @@ void Draw::DrawDifferedFramebuffer::createFramebufferTextures(uint32_t width, ui
 	}
 
 	imageInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-	imageInfo.format = vulkanData->depthFormat;
+	imageInfo.format = viewInfo.format =  vulkanData->depthFormat;
 	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-	framebufferTextures[3] = std::make_unique<Texture>(vulkanData, imageInfo, viewInfo);
+	framebufferTextures[framebufferTextures.size() - 1] = std::make_unique<Texture>(vulkanData, imageInfo, viewInfo);
 }
 
 void Draw::DrawDifferedFramebuffer::createFramebuffer(void) {
@@ -127,15 +126,15 @@ void Draw::DrawDifferedFramebuffer::createFramebuffer(void) {
 		mAttachments[i] = framebufferTextures[i]->getImageData().imageView;
 	}
 
-	const auto &imageExtent = framebufferTextures[0]->getImageData().imageExtent;
+	framebufferSize = framebufferTextures[0]->getImageData().imageExtent;
 
 	VkFramebufferCreateInfo mFramebufferCreateInfoStruct = {};
 	mFramebufferCreateInfoStruct.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	mFramebufferCreateInfoStruct.renderPass = vulkanData->swapchainRenderpass;
+	mFramebufferCreateInfoStruct.renderPass = renderPass;//vulkanData->swapchainRenderpass;
 	mFramebufferCreateInfoStruct.attachmentCount = static_cast<uint32_t>(mAttachments.size());
 	mFramebufferCreateInfoStruct.pAttachments = mAttachments.data();
-	mFramebufferCreateInfoStruct.height = imageExtent.height;
-	mFramebufferCreateInfoStruct.width = imageExtent.width;
+	mFramebufferCreateInfoStruct.height = framebufferSize.height;
+	mFramebufferCreateInfoStruct.width = framebufferSize.width;
 	mFramebufferCreateInfoStruct.layers = 1;
 
 	if (vkCreateFramebuffer(vulkanData->device, &mFramebufferCreateInfoStruct, nullptr, &framebuffer) != VK_SUCCESS) {
@@ -149,4 +148,8 @@ VkRenderPass Draw::DrawDifferedFramebuffer::getRenderPass(void) const {
 
 VkFramebuffer Draw::DrawDifferedFramebuffer::getFramebuffer(void) const {
 	return framebuffer;
+}
+
+VkExtent3D Draw::DrawDifferedFramebuffer::getFramebufferSize(void) const {
+	return framebufferSize;
 }

@@ -39,7 +39,7 @@ void LoadManager::LoadDiffuseMesh::addModel(const aiScene * pScene) {
 	//has tex coord, has diffuse texture
 	for (uint32_t i = 0; i < pScene->mNumMeshes; i++) {
 		if (pScene->mMeshes[i]->HasTextureCoords(0) &&
-			scene->materials[pScene->mMeshes[i]->mMaterialIndex].diffuseTextureID) {
+			scene->materials[pScene->mMeshes[i]->mMaterialIndex].diffuseTextureID != -1) {
 			const aiMesh *paiMesh = pScene->mMeshes[i];
 
 			scene->drawData[loadDrawType].drawDataName = paiMesh->mName.C_Str();
@@ -70,6 +70,6 @@ const void * LoadManager::LoadDiffuseMesh::getRawIndexData(void) {
 }
 
 uint32_t LoadManager::LoadDiffuseMesh::getRawIndexDataSize(void) {
-	return static_cast<uint32_t>(indexBuffer.size() * sizeof(uint16_t));
+	return static_cast<uint32_t>(indexBuffer.size() * sizeof(indexBuffer[0]));
 }
 #endif

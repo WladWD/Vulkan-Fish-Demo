@@ -1,6 +1,7 @@
 #include "DrawImage.h"
 #include "DrawFPS.h"
 #include "LoadModel.h"
+#include "DrawDifferedManager.h"
 
 #pragma once
 namespace Engine 
@@ -10,6 +11,7 @@ namespace Engine
 		VulkanEngineApplication::VulkanEngineData vulkanEngineData;
 		
 		std::shared_ptr<Draw::Model> scene;
+		std::unique_ptr<DrawDiffered::DrawDifferedManager> drawDiffered;
 		DrawImage *drawImage;
 		DrawFPS *drawFPS;
 

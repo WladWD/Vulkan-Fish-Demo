@@ -125,6 +125,7 @@ VkFormat ImageManager::ImageLoader::selectImageFormat(gli::format imageFormat) {
 	switch (imageFormat) {
 	case gli::format::FORMAT_BGRA8_UNORM_PACK8:
 	case gli::format::FORMAT_BGR8_UNORM_PACK32: return VK_FORMAT_B8G8R8A8_UNORM;
+	case gli::format::FORMAT_BGR8_UNORM_PACK8: return VK_FORMAT_B8G8R8_UNORM;
 
 	default: throw std::runtime_error("[Error] undefined image format");
 	}

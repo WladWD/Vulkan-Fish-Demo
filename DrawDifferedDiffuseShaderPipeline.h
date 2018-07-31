@@ -2,13 +2,12 @@
 
 #pragma once
 namespace Shader {
-	class DrawDifferedDiffuseShaderPipeline: public DrawDifferedShaderPipeline {
-
+	class DrawDifferedDiffuseShaderPipeline: 
+		public DrawDifferedShaderPipeline {
 	protected:
 		std::vector<VkWriteDescriptorSet> updateDescriptors;
 
 		virtual void initializeTextureDescriptorSetLayout(void) override;
-
 	public:
 		DrawDifferedDiffuseShaderPipeline(
 			const Asset::AssetLoader *asset,

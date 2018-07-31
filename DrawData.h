@@ -29,5 +29,7 @@ namespace Draw {
 		std::unique_ptr<ModelBuffer> buffer;
 		std::vector<Material> materials;
 		DrawData drawData[static_cast<uint32_t>(DrawDataTypes::DrawDataTypeCount)];
+
+		glm::mat4 mWorld;
 	};
 }
