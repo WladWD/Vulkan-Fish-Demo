@@ -27,9 +27,6 @@ void DrawDiffered::DrawDifferedManager::draw(VkCommandBuffer commandBuffer) {
 	mRenderPassBeginInfo.clearValueCount = static_cast<uint32_t>(mClearValue.size());
 	mRenderPassBeginInfo.pClearValues = mClearValue.data();
 
-	//mRenderPassBeginInfo.renderPass = vulkanData->swapchainRenderpass;
-	//mRenderPassBeginInfo.framebuffer = vulkanData->swapchainFramebuffer[vulkanData->mImageIndex];
-
 	vkCmdBeginRenderPass(commandBuffer, &mRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	VkBuffer mBuffers[] = { model->buffer->getVertexBuffer() };
@@ -42,8 +39,6 @@ void DrawDiffered::DrawDifferedManager::draw(VkCommandBuffer commandBuffer) {
 	}
 
 	vkCmdEndRenderPass(commandBuffer);
-
-
 
 
 
@@ -63,7 +58,7 @@ void DrawDiffered::DrawDifferedManager::draw(VkCommandBuffer commandBuffer) {
 	imageBlit.dstSubresource.mipLevel = 0;
 
 	vkCmdBlitImage(vulkanData->commandBuffer[vulkanData->mImageIndex],
-		framebuffer->framebufferTextures[1]->getImageData().image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		framebuffer->getImageByIndex(1), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		vulkanData->swapchainImage[vulkanData->mImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1, &imageBlit,
 		VK_FILTER_LINEAR);

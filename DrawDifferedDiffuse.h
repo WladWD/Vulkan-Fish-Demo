@@ -8,7 +8,7 @@ namespace DrawDiffered {
 
 		void updateUniforms(void);
 		void setMaterial(VkCommandBuffer commandBuffer, uint32_t materialIdx);
-		virtual void initializePipeline(const std::shared_ptr<Draw::DrawDifferedFramebuffer> &framebuffer) override;
+		virtual void initializePipeline(void) override;
 	public:
 		DrawDifferedDiffuse(const VulkanEngineApplication::VulkanData * vulkanData,
 			const VulkanEngineApplication::VulkanEngineData *vulkanEngineData,
