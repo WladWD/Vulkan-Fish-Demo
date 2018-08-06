@@ -1,10 +1,12 @@
 #include "VulkanEngine.h"
+#include "Camera.h"
 
 Engine::VulkanEngine::VulkanEngine(const VulkanEngineApplication::VulkanData * vulkanData):
 	vulkanData(vulkanData), scene(nullptr), drawDiffered(nullptr) {
 	drawImage = new DrawImage(vulkanData, &vulkanEngineData);
 	drawFPS = new DrawFPS(vulkanData, &vulkanEngineData);
 
+	auto v = new Engine::Camera(1.0, 1.0);
 }
 
 Engine::VulkanEngine::~VulkanEngine() {

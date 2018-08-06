@@ -4,8 +4,7 @@
 #include "DrawDifferedManager.h"
 
 #pragma once
-namespace Engine 
-{
+namespace Engine  {
 	class VulkanEngine {
 		const VulkanEngineApplication::VulkanData * vulkanData;
 		VulkanEngineApplication::VulkanEngineData vulkanEngineData;

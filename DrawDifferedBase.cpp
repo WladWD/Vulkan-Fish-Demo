@@ -95,7 +95,6 @@ void DrawDiffered::DrawDifferedBase::initializePipelineDefault(void) {
 }
 
 void DrawDiffered::DrawDifferedBase::createGraphicsPipeline() {
-
 	VkViewport mViewport = {};
 	mViewport.x = 0.0f;
 	mViewport.y = 0.0f;
