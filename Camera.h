@@ -39,8 +39,8 @@ namespace Engine {
 		void setCameraPosition(const glm::vec3 &position);
 		void setCameraDirection(const glm::vec3 &forward, const glm::vec3 &up);
 
-		glm::vec3 unprojection(glm::vec2 point) const = delete; //TODO add method
-		glm::vec2 projection(glm::vec3 position) const = delete; //TODO add method
+		glm::vec3 unprojection(glm::vec2 point, float depth) const;
+		glm::vec2 projection(glm::vec3 position) const;
 	};
 }
 

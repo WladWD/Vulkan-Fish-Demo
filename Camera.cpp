@@ -10,7 +10,12 @@ Engine::Camera::Camera(float fov, float aspectRatio, float near, float far):
 }
 
 void Engine::Camera::updateMatrix(void) {
-	//TODO add function
+	view[0] = glm::vec4(cameraRight, 0.0f);
+	view[1] = glm::vec4(cameraUp, 0.0f);
+	view[2] = glm::vec4(cameraForward, 0.0f);
+	view[3] = glm::vec4(-cameraPosition, 0.0f);
+
+	projView = proj * view;
 }
 
 void Engine::Camera::resize(float aspectRatio) {
@@ -61,8 +66,22 @@ void Engine::Camera::setCameraPosition(const glm::vec3 & position) {
 }
 
 void Engine::Camera::setCameraDirection(const glm::vec3 & forward, const glm::vec3 &up) {
-	cameraForward = forward;
-	cameraUp = up;
+	cameraForward = glm::normalize(forward);
+	cameraUp = cameraUp - cameraForward * glm::dot(cameraForward, cameraUp);
+	cameraUp = glm::normalize(up);
 	cameraRight = glm::cross(cameraUp, cameraForward);
 	updateMatrix();
+}
+
+glm::vec3 Engine::Camera::unprojection(glm::vec2 point, float depth) const {
+	glm::mat4 invProjView = glm::inverse(projView);
+	glm::vec4 worldPosition = invProjView * glm::vec4(point, depth, 1.0f);
+	worldPosition /= worldPosition.w;
+	return glm::vec3(worldPosition);
+}
+
+glm::vec2 Engine::Camera::projection(glm::vec3 position) const {
+	glm::vec4 projPosition = projView * glm::vec4(position, 1.0f);
+	projPosition /= projPosition.w;
+	return glm::vec3(projPosition);
 }
