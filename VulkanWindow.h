@@ -1,4 +1,10 @@
 #include "VulkanEngine.h"
+#include "VulkanDevice.h"
+#include "VulkanSwapchain.h"
+#include "VulkanFramebuffer.h"
+#include "VulkanDebug.h"
+#include "VulkanInfo.h"
+#include "VulkanCommand.h"
 #include <iostream>
 #pragma once
 
@@ -7,86 +13,55 @@ namespace VulkanEngineApplication
 	class VulkanWindow 
 	{
 		/////////////////////////////////////////////////////////////////////////////////////
-		VkInstance vulkanInstance;
-		/////////////////////////////////////////////////////////////////////////////////////
-		//Validation Layer
-		std::vector<const char *> deviceValidationLayer;
+		//Validation Layer and Extension
 		std::vector<const char *> instanceValidationLayer = {
 			"VK_LAYER_LUNARG_standard_validation"
+			//"VK_LAYER_NV_nsight"//VK_LAYER_LUNARG_api_dump"
+		};
+
+		std::vector<const char *> instanceExtension = {
+			VK_KHR_SURFACE_EXTENSION_NAME
 		};
 
 #ifdef _DEBUG
-		const bool enableDeviceValidationLayer = true;
 		const bool enableInstanceValidationLayer = true;
 #else
-		const bool enableDeviceValidationLayer = true;
 		const bool enableInstanceValidationLayer = false;
-#endif
-
-		VkDebugReportCallbackEXT mCallbackDebugReport;
+#endif		
 		/////////////////////////////////////////////////////////////////////////////////////
-		//Extension 
-		std::vector<const char *> deviceExtension;
-		std::vector<const char *> instanceExtension;
+		VulkanDevice *device;
+		VulkanSwapchain *swapchain;
+		VulkanFramebuffer *framebuffer;
+		VulkanCommand *command;
+		VulkanDebug *debug;
+		VulkanInfo *info;
 		/////////////////////////////////////////////////////////////////////////////////////
-		//GLFW DATA
-		GLFWwindow *mWindow;
+		VulkanEngineApplication::VulkanData vulkanData;
 		/////////////////////////////////////////////////////////////////////////////////////
-		//Android DATA
-
+		Engine::VulkanEngine *engine;	
 		/////////////////////////////////////////////////////////////////////////////////////
-		//Vulkan DATA
-		VkSurfaceKHR windowSurface;
-		/////////////////////////////////////////////////////////////////////////////////////
-		static void OnWindowResize(GLFWwindow *mWindow, int width, int height);
-		/////////////////////////////////////////////////////////////////////////////////////
-		//Print Function
-		void printApplicationInfo(void);
-
-		void printInstanceExtensionInfo(void);
-		void printDeviceExtensionInfo(void);
-
-		void printInstanceValidationLayerInfo(void);
-		void printDeviceValidationLayerInfo(void);
-		/////////////////////////////////////////////////////////////////////////////////////
-		//Check Function
-		bool checkValidationSupport(void);
-		void addInstanceRequiredExtension(void);
-		void selectPhisicalDevice(void);
-		/////////////////////////////////////////////////////////////////////////////////////
-		void initWindow(int32_t width, int32_t height, const char *sTitle = "Vulkan");
 		void initVulkan(void);
-		/////////////////////////////////////////////////////////////////////////////////////
-		//Debug Report Function
-		VkResult createDebugReportCallbackEXT(VkInstance mxInstance,
-			const VkDebugReportCallbackCreateInfoEXT *pCreateInfo,
-			const VkAllocationCallbacks *mAllocators,
-			VkDebugReportCallbackEXT *pCallback);
-		void destroyDebugReportCallbackEXT(VkInstance mxInstance,
-			VkDebugReportCallbackEXT pCallback,
-			const VkAllocationCallbacks *mAllocators);
-		void setupDebugReport();
-		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-			VkDebugReportFlagsEXT flags,
-			VkDebugReportObjectTypeEXT objType,
-			uint64_t obj,
-			size_t location,
-			int32_t code,
-			const char *layerPrefix,
-			const char *msg,
-			void *userData
-		);
-		/////////////////////////////////////////////////////////////////////////////////////
-		void createInstance(void);
-		void createWindowSurface(void);
-		void createDevice(void);
-		void createSwapShain(void);
+		void initDebug(void);
+		bool checkValidationSupport(void);
+		void createSemaphore(void);
 		/////////////////////////////////////////////////////////////////////////////////////
 	public:
-		VulkanWindow(int32_t width, int32_t height, const char *sTitle = "Vulkan");
+		VulkanWindow(void);
 		~VulkanWindow();
-
-		void run();
+		/////////////////////////////////////////////////////////////////////////////////////
+		void createInstance(void);
+		void initialize(const Asset::AssetLoader *assetLoader);
+		void addInstanceRequiredExtension(const char *extensionName);
+		/////////////////////////////////////////////////////////////////////////////////////
+		const VulkanEngineApplication::VulkanData *getVulkanData();
+		/////////////////////////////////////////////////////////////////////////////////////
+		void resize(void);
+		/////////////////////////////////////////////////////////////////////////////////////
+		void pause(void);
+		void resume(void);
+		/////////////////////////////////////////////////////////////////////////////////////
+		void draw(void);
+		/////////////////////////////////////////////////////////////////////////////////////
 	};
 }
 

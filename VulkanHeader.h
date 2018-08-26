@@ -4,19 +4,36 @@
 //Desktop Init
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
+//#define JNIEnv unsigned char
+//#define jobject int
+
 #else 
 //Android Init
 
+//#define VK_USE_PLATFORM_ANDROID_KHR
+
+
 #include <unistd.h>
 #include <android/log.h>
-#include "vulkan_wrapper.h" // Include Vulkan_wrapper and dynamically load symbols.
+#include <dlfcn.h>
 #include <unistd.h>
-
-#include "vulkan/vk_sdk_platform.h"
-#include <vulkan/vulkan.h>
-
+//#include <vulkan/vulkan.h>
+//#include <vulkan/vk_platform.h>
+#include <android_native_app_glue.h>
+#include "vulkan_wrapper.h"
 
 #endif // !ANDROID
+
+
+#ifdef _WIN32
+
+#define USE_ASSIMP
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
+#endif
 /////////////////////////////////////////////////////////////////////
 //Math Init
 #define GLM_FORCE_RADIANS
@@ -25,6 +42,11 @@
 #include <glm\gtc\matrix_transform.hpp>
 /////////////////////////////////////////////////////////////////////
 //Image Load Init
+#include <gli\texture2d.hpp>
+#include <gli\convert.hpp>
+#include <gli\generate_mipmaps.hpp>
+#include <gli\load.hpp>
+#include <gli\save.hpp>
 #include <gli\gli.hpp>
 /////////////////////////////////////////////////////////////////////
 //C++ Function

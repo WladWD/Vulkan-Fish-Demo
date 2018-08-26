@@ -1,45 +1,151 @@
 #include "VulkanWindow.h"
 
-VulkanEngineApplication::VulkanWindow::VulkanWindow(int32_t width, int32_t height, const char * sTitle) {
-	initWindow(width, height, sTitle);
-	initVulkan();
 
-#ifdef _DEBUG
-	printApplicationInfo();
-#endif
-
+VulkanEngineApplication::VulkanWindow::VulkanWindow(void) {
+	device = new VulkanDevice(&vulkanData);
+	swapchain = new VulkanSwapchain(&vulkanData);
+	framebuffer = new VulkanFramebuffer(&vulkanData);
+	command = new VulkanCommand(&vulkanData);
+	debug = new VulkanDebug(&vulkanData);
+	info = new VulkanInfo(&vulkanData);
+	engine = new Engine::VulkanEngine(&vulkanData);
 }
 
 VulkanEngineApplication::VulkanWindow::~VulkanWindow() {
 	
-	vkDestroySurfaceKHR(vulkanInstance, windowSurface, nullptr);
+	vkDeviceWaitIdle(vulkanData.device);
 
-	destroyDebugReportCallbackEXT(vulkanInstance, mCallbackDebugReport, nullptr);
+	delete engine;
 
-	vkDestroyInstance(vulkanInstance, nullptr);
+	delete info;
 
-	glfwDestroyWindow(mWindow);
+	vkDestroySemaphore(vulkanData.device, vulkanData.imageAvailable, nullptr);
 
-	glfwTerminate();
+	vkDestroySemaphore(vulkanData.device, vulkanData.renderFinish, nullptr);
+
+	delete debug;
+
+	delete command;
+
+	delete framebuffer;
+
+	delete swapchain;
+
+	delete device;
+
+	vkDestroyInstance(vulkanData.vulkanInstance, nullptr);
 }
 
-void VulkanEngineApplication::VulkanWindow::initWindow(int32_t width, int32_t height, const char * sTitle) {
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+const VulkanEngineApplication::VulkanData * VulkanEngineApplication::VulkanWindow::getVulkanData() {
+	return &vulkanData;
+}
 
-	mWindow = glfwCreateWindow(width, height, sTitle, nullptr, nullptr);
+void VulkanEngineApplication::VulkanWindow::initialize(const Asset::AssetLoader *assetLoader) {
+	initVulkan();
+	engine->initialize(assetLoader);
 
-	glfwSetWindowUserPointer(mWindow, this);
-	glfwSetWindowSizeCallback(mWindow, OnWindowResize);
+#ifdef _DEBUG
+	info->printApplicationInfo();
+#endif
+}
+
+void VulkanEngineApplication::VulkanWindow::resize(void) {
+	vkDeviceWaitIdle(vulkanData.device);
+
+	swapchain->resize();
+
+	framebuffer->free();
+	framebuffer->initialize();
+
+	//command->free();
+	//command->initialize();
+
+	engine->resize();
+}
+
+void VulkanEngineApplication::VulkanWindow::pause(void) {
+	//stop timer and other object
+
+	engine->pause();
+}
+
+void VulkanEngineApplication::VulkanWindow::resume(void) {
+	//resume timer and other object
+	engine->resume();
+}
+
+void VulkanEngineApplication::VulkanWindow::draw() {
+
+	vkQueueWaitIdle(vulkanData.graphicsQueue[0]);
+
+	VkResult mResult = vkAcquireNextImageKHR(vulkanData.device, vulkanData.swapchain, std::numeric_limits<uint64_t>::max(), vulkanData.imageAvailable, VK_NULL_HANDLE, &vulkanData.mImageIndex);
+
+	if (mResult == VK_ERROR_OUT_OF_DATE_KHR) {
+		resize();
+		return;
+	}
+	else if (mResult != VK_SUCCESS && mResult != VK_SUBOPTIMAL_KHR) {
+		throw std::runtime_error("[DBG]\tFailed to aquire swap chain images!");
+	}
+	///////////////////////////////////////////////////////////////////////////////////////
+	vkResetCommandBuffer(vulkanData.commandBuffer[vulkanData.mImageIndex], 0);
+	///////////////////////////////////////////////////////////////////////////////////////
+	// Drawing
+	engine->draw();
+	///////////////////////////////////////////////////////////////////////////////////////
+
+	VkSubmitInfo mSubmitInfo = {};
+	mSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	VkSemaphore mWaitSemaphore[] = { vulkanData.imageAvailable };
+	VkPipelineStageFlags mWaitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+	mSubmitInfo.waitSemaphoreCount = 1;
+	mSubmitInfo.pWaitSemaphores = mWaitSemaphore;
+	mSubmitInfo.pWaitDstStageMask = mWaitStages;
+	mSubmitInfo.commandBufferCount = 1;
+	mSubmitInfo.pCommandBuffers = &vulkanData.commandBuffer[vulkanData.mImageIndex];
+
+	VkSemaphore mSigmalSemaphores[] = { vulkanData.renderFinish };
+	mSubmitInfo.pSignalSemaphores = mSigmalSemaphores;
+	mSubmitInfo.signalSemaphoreCount = 1;
+
+	VkSwapchainKHR mSwapChains[] = { vulkanData.swapchain };
+
+	VkPresentInfoKHR mPresentInfo = {};
+	mPresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	mPresentInfo.waitSemaphoreCount = 1;
+	mPresentInfo.pWaitSemaphores = mSigmalSemaphores;
+	mPresentInfo.swapchainCount = 1;
+	mPresentInfo.pSwapchains = mSwapChains;
+	mPresentInfo.pImageIndices = &vulkanData.mImageIndex;
+	mPresentInfo.pResults = nullptr;
+
+	VkResult error = vkQueueSubmit(vulkanData.graphicsQueue[0], 1, &mSubmitInfo, VK_NULL_HANDLE);
+	if (error != VK_SUCCESS) {
+		throw std::runtime_error("[DGB]\tFailed to submit draw command to buffer!");
+	}
+
+	vkQueuePresentKHR(vulkanData.graphicsQueue[0], &mPresentInfo);
 }
 
 void VulkanEngineApplication::VulkanWindow::initVulkan(void) {
-	createInstance();
-	setupDebugReport();
-	createWindowSurface();
-	createDevice();
-	createSwapShain();
+	
+	initDebug();
+
+	device->initialize();
+	swapchain->initialize();
+	command->initialize();
+	swapchain->createDepthBuffer();
+	framebuffer->initialize();
+	createSemaphore();
+}
+
+void VulkanEngineApplication::VulkanWindow::initDebug(void) {
+	if (!enableInstanceValidationLayer)
+		return;
+
+	debug->initialize();
 }
 
 void VulkanEngineApplication::VulkanWindow::createInstance(void) {
@@ -48,7 +154,7 @@ void VulkanEngineApplication::VulkanWindow::createInstance(void) {
 	appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 1);
-	appInfo.pApplicationName = "FishDemo";
+	appInfo.pApplicationName = "VulkanDemo";
 	appInfo.pEngineName = "RGBEngine";
 	appInfo.pNext = nullptr;
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -68,31 +174,20 @@ void VulkanEngineApplication::VulkanWindow::createInstance(void) {
 		instanceInfo.ppEnabledLayerNames = nullptr;
 	}
 
-	addInstanceRequiredExtension();
+	if (enableInstanceValidationLayer) {
+		instanceExtension.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+	}
+
 	instanceInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtension.size());
 	instanceInfo.ppEnabledExtensionNames = instanceExtension.data();
 
-	if (vkCreateInstance(&instanceInfo, nullptr, &vulkanInstance) != VK_SUCCESS) {
+	if (vkCreateInstance(&instanceInfo, nullptr, &vulkanData.vulkanInstance) != VK_SUCCESS) {
 		throw std::runtime_error("[Error] Failed create instace!");
 	}
 }
 
-void VulkanEngineApplication::VulkanWindow::addInstanceRequiredExtension(void) {
-
-	uint32_t glfwExtensionCount = 0;
-	const char **glfwExtension;
-
-	glfwExtension = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-	for (uint32_t i = 0; i < glfwExtensionCount; ++i)
-		instanceExtension.push_back(glfwExtension[i]);
-
-	if (enableInstanceValidationLayer)
-		instanceExtension.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-}
-
-void VulkanEngineApplication::VulkanWindow::selectPhisicalDevice(void) {
-
+void VulkanEngineApplication::VulkanWindow::addInstanceRequiredExtension(const char *extensionName) {
+	instanceExtension.push_back(extensionName);
 }
 
 bool VulkanEngineApplication::VulkanWindow::checkValidationSupport(void) {
@@ -116,134 +211,12 @@ bool VulkanEngineApplication::VulkanWindow::checkValidationSupport(void) {
 	return false;
 }
 
-void VulkanEngineApplication::VulkanWindow::createWindowSurface(void) {
-	if (glfwCreateWindowSurface(vulkanInstance, mWindow, nullptr, &windowSurface) != VK_SUCCESS) {
-		throw std::runtime_error("[Error] Failed to create window surface!");
+void VulkanEngineApplication::VulkanWindow::createSemaphore(void) {
+	VkSemaphoreCreateInfo mSemaphoreCreateInfo = {};
+	mSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	if (vkCreateSemaphore(vulkanData.device, &mSemaphoreCreateInfo, nullptr, &vulkanData.imageAvailable) != VK_SUCCESS ||
+		vkCreateSemaphore(vulkanData.device, &mSemaphoreCreateInfo, nullptr, &vulkanData.renderFinish) != VK_SUCCESS) {
+		throw std::runtime_error("[DBG]\tFailed to create semaphores!");
 	}
-}
-
-void VulkanEngineApplication::VulkanWindow::createDevice(void) {
-	selectPhisicalDevice();
-}
-
-void VulkanEngineApplication::VulkanWindow::createSwapShain(void) {
-}
-
-VkResult VulkanEngineApplication::VulkanWindow::createDebugReportCallbackEXT(VkInstance mxInstance,
-	const VkDebugReportCallbackCreateInfoEXT *pCreateInfo,
-	const VkAllocationCallbacks *mAllocators,
-	VkDebugReportCallbackEXT *pCallback)
-{
-	auto mFunc = reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(
-		vkGetInstanceProcAddr(mxInstance, "vkCreateDebugReportCallbackEXT"));
-	if (mFunc != nullptr)
-		return mFunc(mxInstance, pCreateInfo, mAllocators, pCallback);
-	else
-		return VK_ERROR_EXTENSION_NOT_PRESENT;
-}
-
-void VulkanEngineApplication::VulkanWindow::destroyDebugReportCallbackEXT(
-	VkInstance mxInstance,
-	VkDebugReportCallbackEXT pCallback,
-	const VkAllocationCallbacks * mAllocators)
-{
-	auto mFunc = reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT> (
-		vkGetInstanceProcAddr(mxInstance, "vkDestroyDebugReportCallbackEXT"));
-	if (mFunc != nullptr)
-		mFunc(mxInstance, pCallback, mAllocators);
-	else
-		throw std::runtime_error("[ERR]\t vkDestroyDebugReportCallbackEXT is not find!");
-}
-
-void VulkanEngineApplication::VulkanWindow::setupDebugReport(void)
-{
-	if (!enableInstanceValidationLayer)
-		return;
-
-	VkDebugReportCallbackCreateInfoEXT mDebugReportCallbackCreateInfoStruct = {};
-	mDebugReportCallbackCreateInfoStruct.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-	mDebugReportCallbackCreateInfoStruct.flags = VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_ERROR_BIT_EXT;
-	mDebugReportCallbackCreateInfoStruct.pfnCallback = debugCallback;
-	mDebugReportCallbackCreateInfoStruct.pUserData = this;
-
-	if (createDebugReportCallbackEXT(vulkanInstance, &mDebugReportCallbackCreateInfoStruct, nullptr, &mCallbackDebugReport) != VK_SUCCESS)
-		throw std::runtime_error("Failed to set up debug callback!");
-}
-
-
-void VulkanEngineApplication::VulkanWindow::OnWindowResize(GLFWwindow * mWindow, int width, int height)
-{
-	if (!width || !height)
-		return;
-
-	VulkanEngineApplication::VulkanWindow *mApplication = static_cast<VulkanEngineApplication::VulkanWindow *>(glfwGetWindowUserPointer(mWindow));
-	//mApplication->RecreateSwapChain();
-}
-
-void VulkanEngineApplication::VulkanWindow::printApplicationInfo(void) {
-	printInstanceExtensionInfo();
-	printDeviceExtensionInfo();
-	printInstanceValidationLayerInfo();
-	printDeviceValidationLayerInfo();
-}
-
-void VulkanEngineApplication::VulkanWindow::printInstanceExtensionInfo(void) {
-
-	std::cout << "[INFO] Instance Extension" << std::endl;
-	std::vector<VkExtensionProperties> properties;
-	uint32_t propertiesCount = 0;
-	vkEnumerateInstanceExtensionProperties(nullptr, &propertiesCount, nullptr);
-	if (propertiesCount > 0) {
-		properties.resize(propertiesCount);
-		vkEnumerateInstanceExtensionProperties(nullptr, &propertiesCount, properties.data());
-
-		for (auto v : properties) {
-			std::cout << "[INFO] - " << v.extensionName << ", specVersion = " << v.specVersion << std::endl;
-		}
-	}
-	std::cout << std::endl;
-}
-
-void VulkanEngineApplication::VulkanWindow::printDeviceExtensionInfo(void) {
-}
-
-void VulkanEngineApplication::VulkanWindow::printInstanceValidationLayerInfo(void) {
-
-	std::cout << "[INFO] Instance Validation Layer" << std::endl;
-	std::vector<VkLayerProperties> properties;
-	uint32_t propertiesCount = 0;
-	vkEnumerateInstanceLayerProperties(&propertiesCount, nullptr);
-	if (propertiesCount > 0) {
-		properties.resize(propertiesCount);
-		vkEnumerateInstanceLayerProperties(&propertiesCount, properties.data());
-
-		for (auto v : properties) {
-			std::cout << "[INFO] - " << v.layerName << ", specVersion = " << v.specVersion << std::endl;
-		}
-	}
-	std::cout << std::endl;
-}
-
-void VulkanEngineApplication::VulkanWindow::printDeviceValidationLayerInfo(void)
-{
-}
-
-
-void VulkanEngineApplication::VulkanWindow::run() {
-}
-
-
-VKAPI_ATTR VkBool32 VKAPI_CALL VulkanEngineApplication::VulkanWindow::debugCallback(
-	VkDebugReportFlagsEXT flags,
-	VkDebugReportObjectTypeEXT objType,
-	uint64_t obj,
-	size_t location,
-	int32_t code,
-	const char * layerPrefix,
-	const char * msg,
-	void * userData)
-{
-	std::cout << "[DBG]\tValidation Layer: " << msg << std::endl;
-
-	return VK_FALSE;
 }
