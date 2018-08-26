@@ -1,6 +1,6 @@
 #include "LoadModelAssimp.h"
 
-
+#ifdef USE_ASSIMP
 LoadManager::LoadModelAssimp::LoadModelAssimp(
 	const Asset::AssetLoader * assetLoader,
 	const VulkanEngineApplication::VulkanData * vulkanData,
@@ -44,7 +44,7 @@ void LoadManager::LoadModelAssimp::addModel(std::string model) {
 	Importer.FreeScene();
 }
 
-void LoadManager::LoadModelAssimp::packVertexBuffer(void) {
+VkDeviceSize LoadManager::LoadModelAssimp::packVertexBuffer(void) {
 	VkDeviceSize bufferSize = 0;
 	uint32_t bufferOffset = 0;
 
@@ -82,9 +82,11 @@ void LoadManager::LoadModelAssimp::packVertexBuffer(void) {
 		vertexBuffer,
 		vertexBufferMemory
 	);
+
+	return bufferSize;
 }
 
-void LoadManager::LoadModelAssimp::packIndexBuffer(void) {
+VkDeviceSize LoadManager::LoadModelAssimp::packIndexBuffer(void) {
 	VkDeviceSize bufferSize = 0;
 	uint32_t bufferOffset = 0;
 
@@ -122,11 +124,13 @@ void LoadManager::LoadModelAssimp::packIndexBuffer(void) {
 		indexBuffer,
 		indexBufferMemory
 	);
+
+	return bufferSize;
 }
 
 void LoadManager::LoadModelAssimp::packScene(void) {
-	packVertexBuffer();
-	packIndexBuffer();
+	VkDeviceSize vertexBufferSize = packVertexBuffer();
+	VkDeviceSize indexBufferSize = packIndexBuffer();
 
 	scene->buffer = std::unique_ptr<Draw::ModelBuffer>(
 		new Draw::ModelBuffer(
@@ -134,10 +138,13 @@ void LoadManager::LoadModelAssimp::packScene(void) {
 			vertexBuffer,
 			indexBuffer,
 			vertexBufferMemory,
-			indexBufferMemory
+			indexBufferMemory,
+			vertexBufferSize,
+			indexBufferSize
 		));
 }
 
 const std::shared_ptr<Draw::Model>& LoadManager::LoadModelAssimp::getLoadedScene(void) {
 	return scene;
 }
+#endif

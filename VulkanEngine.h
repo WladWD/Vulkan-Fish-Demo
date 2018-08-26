@@ -1,6 +1,7 @@
 #include "DrawImage.h"
 #include "DrawFPS.h"
-#include "LoadModel.h"
+#include "LoadModelManager.h"
+#include "StoreSceneNative.h"
 #include "DrawDifferedManager.h"
 
 #pragma once

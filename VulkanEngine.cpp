@@ -22,9 +22,9 @@ void Engine::VulkanEngine::initialize(const Asset::AssetLoader *assetLoader) {
 	initializeEngine(assetLoader);
 
 
-	std::unique_ptr<LoadManager::LoadModel> loader =
-		std::unique_ptr<LoadManager::LoadModel>(
-			new LoadManager::LoadModel(
+	std::unique_ptr<LoadManager::LoadModelManager> loader =
+		std::unique_ptr<LoadManager::LoadModelManager>(
+			new LoadManager::LoadModelManager(
 				assetLoader,
 				vulkanData,
 				&vulkanEngineData));
@@ -32,6 +32,11 @@ void Engine::VulkanEngine::initialize(const Asset::AssetLoader *assetLoader) {
 	loader->addModel("Resources\\Models\\Bus\\Bus.obj"); //coin\\chinese_coin.obj");\\bb8\\bb8.obj");
 	loader->packScene();
 	scene = loader->getLoadedScene();
+
+	std::unique_ptr<Store::StoreScene> storeScene = 
+		std::make_unique<Store::StoreSceneNative>(&vulkanEngineData);
+	storeScene->store(scene, "Resources\\Models\\native\\bus.nmf");//Resources\Models\native
+
 
 	drawDiffered = std::make_unique<DrawDiffered::DrawDifferedManager>(vulkanData, &vulkanEngineData, scene, assetLoader);
 	drawImage->initialize(assetLoader);

@@ -37,6 +37,11 @@ void DrawDiffered::DrawDifferedDiffuse::initializePipeline(void) {
 	mGraphicsPipelineCreateInfoStruct.pInputAssemblyState = &mInputAssemblyStateCreateInfo;
 	mGraphicsPipelineCreateInfoStruct.layout = shader->getPipelineLayout();
 
+	mRasterizationStateCreateInfo.depthBiasSlopeFactor = 0.03f;
+	mRasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
+	mRasterizationStateCreateInfo.depthBiasClamp = 0.0f;
+	mRasterizationStateCreateInfo.depthBiasEnable = VK_TRUE;
+
 	createGraphicsPipeline();
 }
 
@@ -50,8 +55,8 @@ void DrawDiffered::DrawDifferedDiffuse::updateUniforms(void) {
 	uniformBuffer->mWorldInvTransp = glm::transpose(glm::inverse(uniformBuffer->mWorld));
 	uniformBuffer->mTexTransform = glm::mat4(1.0);
 
-	float r = 5000.0f;
-	uniformBuffer->cameraPosition = glm::vec4(r * glm::cos(deltaTime) * glm::cos(deltaTime), r * glm::sin(deltaTime), -5000.0 * glm::cos(deltaTime) * glm::sin(deltaTime), 0.0);//glm::vec4(0.0, 20.0, -40.0, 0.0);//
+	float r = 3600.0f;
+	uniformBuffer->cameraPosition = glm::vec4(r * glm::cos(deltaTime), r * 0.4, -r * glm::sin(deltaTime), 0.0);//glm::vec4(0.0, 20.0, -40.0, 0.0);//
 	uniformBuffer->mProjView = glm::perspective(1.0f, static_cast<float>(vulkanData->mSwapChainImageExtent.width) / static_cast<float>(vulkanData->mSwapChainImageExtent.height), 1.0f, 20000.0f);
 	uniformBuffer->mProjView[1][1] *= -1;
 	uniformBuffer->mProjView *= glm::lookAt(glm::vec3(uniformBuffer->cameraPosition), glm::vec3(0.0, 50.0, 0.0), glm::vec3(0.0, 1.0, 0.0));

@@ -1,6 +1,7 @@
 #include "LoadDiffuseMesh.h"
 #include "VulkanEngineData.h"
 
+#ifdef USE_ASSIMP
 #pragma once
 namespace LoadManager {
 	class LoadModelAssimp {
@@ -15,8 +16,8 @@ namespace LoadManager {
 
 		std::shared_ptr<Draw::Model> scene;
 
-		void packVertexBuffer(void);
-		void packIndexBuffer(void);
+		VkDeviceSize packVertexBuffer(void);
+		VkDeviceSize packIndexBuffer(void);
 	public:
 		LoadModelAssimp(const Asset::AssetLoader * assetLoader,
 			const VulkanEngineApplication::VulkanData * vulkanData,
@@ -29,4 +30,6 @@ namespace LoadManager {
 		const std::shared_ptr<Draw::Model> &getLoadedScene(void);
 	};
 }
+#endif
+
 

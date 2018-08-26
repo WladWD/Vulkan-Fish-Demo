@@ -3,9 +3,11 @@
 Draw::ModelBuffer::ModelBuffer(
 	const VulkanEngineApplication::VulkanData * vulkanData,
 	VkBuffer vertexBuffer, VkBuffer indexBuffer,
-	VkDeviceMemory vertexBufferMemory, VkDeviceMemory indexBufferMemory):
+	VkDeviceMemory vertexBufferMemory, VkDeviceMemory indexBufferMemory,
+	VkDeviceSize vertexBufferSize, VkDeviceSize indexBufferSize):
 	vulkanData(vulkanData),	vertexBuffer(vertexBuffer), indexBuffer(indexBuffer),
-	vertexBufferMemory(vertexBufferMemory), indexBufferMemory(indexBufferMemory) { }
+	vertexBufferMemory(vertexBufferMemory), indexBufferMemory(indexBufferMemory),
+	vertexBufferSize(vertexBufferSize), indexBufferSize(indexBufferSize) { }
 
 Draw::ModelBuffer::~ModelBuffer() {
 	vkDestroyBuffer(vulkanData->device, vertexBuffer, nullptr);
@@ -15,10 +17,10 @@ Draw::ModelBuffer::~ModelBuffer() {
 	vkFreeMemory(vulkanData->device, indexBufferMemory, nullptr);
 }
 
-VkBuffer Draw::ModelBuffer::getVertexBuffer(void) const {
-	return vertexBuffer;
-}
-
-VkBuffer Draw::ModelBuffer::getIndexBuffer(void) const {
-	return indexBuffer;
-}
+//VkBuffer Draw::ModelBuffer::getVertexBuffer(void) const {
+//	return vertexBuffer;
+//}
+//
+//VkBuffer Draw::ModelBuffer::getIndexBuffer(void) const {
+//	return indexBuffer;
+//}

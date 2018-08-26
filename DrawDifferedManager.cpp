@@ -29,10 +29,10 @@ void DrawDiffered::DrawDifferedManager::draw(VkCommandBuffer commandBuffer) {
 
 	vkCmdBeginRenderPass(commandBuffer, &mRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	VkBuffer mBuffers[] = { model->buffer->getVertexBuffer() };
+	VkBuffer mBuffers[] = { model->buffer->vertexBuffer };//getVertexBuffer
 	VkDeviceSize mOffsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, mBuffers, mOffsets);
-	vkCmdBindIndexBuffer(commandBuffer, model->buffer->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(commandBuffer, model->buffer->indexBuffer, 0, VK_INDEX_TYPE_UINT32);//getIndexBuffer
 
 	for (const auto &drawDiff: drawDiffered) {
 		drawDiff.second->draw(commandBuffer);

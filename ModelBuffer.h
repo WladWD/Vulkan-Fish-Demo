@@ -6,19 +6,24 @@ namespace Draw {
 	private:
 		const VulkanEngineApplication::VulkanData * vulkanData;
 
-		VkDeviceMemory vertexBufferMemory;
-		VkDeviceMemory indexBufferMemory;
+		const VkDeviceMemory vertexBufferMemory;
+		const VkDeviceMemory indexBufferMemory;
 
-		VkBuffer vertexBuffer;
-		VkBuffer indexBuffer;
+	public:
+		const VkBuffer vertexBuffer;
+		const VkBuffer indexBuffer;
+
+		const VkDeviceSize vertexBufferSize;
+		const VkDeviceSize indexBufferSize;
 	public:
 		ModelBuffer(const VulkanEngineApplication::VulkanData * vulkanData,
 			VkBuffer vertexBuffer, VkBuffer indexBuffer,
-			VkDeviceMemory vertexBufferMemory, VkDeviceMemory indexBufferMemory);
+			VkDeviceMemory vertexBufferMemory, VkDeviceMemory indexBufferMemory,
+			VkDeviceSize vertexBufferSize, VkDeviceSize indexBufferSize);
 		~ModelBuffer();
 
-		VkBuffer getVertexBuffer(void) const;
-		VkBuffer getIndexBuffer(void) const;
+		//VkBuffer getVertexBuffer(void) const;
+		//VkBuffer getIndexBuffer(void) const;
 	};
 }
 
