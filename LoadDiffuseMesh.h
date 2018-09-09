@@ -1,10 +1,10 @@
-#include "LoadMesh.h"
+#include "LoadMeshAssimp.h"
 #include "VertexStruct.h"
 
 #ifdef USE_ASSIMP
 #pragma once
 namespace LoadManager {
-	class LoadDiffuseMesh: public LoadMesh {
+	class LoadDiffuseMesh: public LoadMeshAssimp {
 
 		std::vector<Draw::Vertex> vertexBuffer;
 		std::vector<uint32_t> indexBuffer;

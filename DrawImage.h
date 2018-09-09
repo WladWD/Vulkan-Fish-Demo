@@ -52,6 +52,7 @@ namespace Engine {
 		VkDeviceMemory depthImageMemory;
 		VkExtent3D depthSourceExtent;
 
+		ImageManager::ImageData drawSourceImage;
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		const VulkanEngineApplication::VulkanData * vulkanData;
 		const VulkanEngineApplication::VulkanEngineData *vulkanEngineData;
@@ -69,7 +70,7 @@ namespace Engine {
 		DrawImage(const VulkanEngineApplication::VulkanData * vulkanData, const VulkanEngineApplication::VulkanEngineData *vulkanEngineData);
 		~DrawImage();
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		void initialize(const Asset::AssetLoader *assetLoader);
+		void initialize(const Asset::AssetLoader *assetLoader, const ImageManager::ImageData &drawSourceImage);
 		void resize(void);
 		void draw(VkCommandBuffer commandBuffer);
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////

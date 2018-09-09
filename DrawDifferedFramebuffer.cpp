@@ -51,11 +51,11 @@ void Draw::DrawDifferedFramebuffer::createRenderPass(void) {
 		mColorAttachmentReference[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 
-	VkSubpassDescription mSubpassStruct = {};
-	mSubpassStruct.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	mSubpassStruct.colorAttachmentCount = static_cast<decltype(mSubpassStruct.colorAttachmentCount)>(mColorAttachmentReference.size());
-	mSubpassStruct.pColorAttachments = mColorAttachmentReference.data();
-	mSubpassStruct.pDepthStencilAttachment = &depthAttachmentReference;
+	std::array<VkSubpassDescription, 1>  mSubpassStruct = {};
+	mSubpassStruct[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	mSubpassStruct[0].colorAttachmentCount = static_cast<decltype(mSubpassStruct[0].colorAttachmentCount)>(mColorAttachmentReference.size());
+	mSubpassStruct[0].pColorAttachments = mColorAttachmentReference.data();
+	mSubpassStruct[0].pDepthStencilAttachment = &depthAttachmentReference;
 
 	std::array<VkAttachmentDescription, textureCount> attachment = { mAttachmentDescription, mAttachmentDescription, mAttachmentDescription , depthAttachment };
 	for (uint32_t i = 0; i < textureCount; ++i) {
@@ -63,22 +63,22 @@ void Draw::DrawDifferedFramebuffer::createRenderPass(void) {
 	}
 
 	VkSubpassDependency mDependency = {};
-	mDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	mDependency.dstSubpass = 0;
+	mDependency.srcSubpass = static_cast<decltype(mDependency.srcSubpass)>(mSubpassStruct.size() - 1);//VK_SUBPASS_EXTERNAL;
+	mDependency.dstSubpass = VK_SUBPASS_EXTERNAL;
 	mDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;//VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
-	mDependency.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	mDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	mDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+	mDependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	mDependency.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	mDependency.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 	//TODO mDependency
 
 	VkRenderPassCreateInfo mRenderPassCreateInfoStruct = {};
 	mRenderPassCreateInfoStruct.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	mRenderPassCreateInfoStruct.attachmentCount = static_cast<uint32_t>(attachment.size());
 	mRenderPassCreateInfoStruct.pAttachments = attachment.data();
-	mRenderPassCreateInfoStruct.subpassCount = 1;
-	mRenderPassCreateInfoStruct.pSubpasses = &mSubpassStruct;
-	mRenderPassCreateInfoStruct.dependencyCount = 0;// 1;
-	mRenderPassCreateInfoStruct.pDependencies = nullptr;// &mDependency;
+	mRenderPassCreateInfoStruct.subpassCount = static_cast<decltype(mRenderPassCreateInfoStruct.subpassCount)>(mSubpassStruct.size());
+	mRenderPassCreateInfoStruct.pSubpasses = mSubpassStruct.data();
+	mRenderPassCreateInfoStruct.dependencyCount = 1;
+	mRenderPassCreateInfoStruct.pDependencies = &mDependency;
 
 	if (vkCreateRenderPass(vulkanData->device, &mRenderPassCreateInfoStruct, nullptr, &renderPass) != VK_SUCCESS) {
 		throw std::runtime_error("[DBG]\tFailed to create render pass!");
@@ -146,14 +146,28 @@ void Draw::DrawDifferedFramebuffer::createFramebuffer(void) {
 	}
 }
 
+//void Draw::DrawDifferedFramebuffer::setReading(void) {
+//	VkCommandBuffer commandBuffer = VulkanInitialize::beginSingleTimeCommand(vulkanData, vulkanData->commandPool);
+//	VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+//	
+//
+//	VulkanInitialize::transitionImageLayout(vulkanData->depthBuffer,
+//		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+//		0, 0,
+//		0, 0,
+//		aspect,
+//		commandBuffer);
+//	VulkanInitialize::endSingleTimeCommand(vulkanData, vulkanData->commandPool, commandBuffer);
+//}
+
 uint32_t Draw::DrawDifferedFramebuffer::getFramebufferColorAttachmentCount(void) const {
 	assert(textureCount > 0);
 	return textureCount - 1;
 }
 
-VkImage Draw::DrawDifferedFramebuffer::getImageByIndex(uint32_t idx) const {
+const ImageManager::ImageData &Draw::DrawDifferedFramebuffer::getImageByIndex(uint32_t idx) const {
 	assert(idx >= 0 && idx < textureCount);
-	return framebufferTextures[idx]->getImageData().image;
+	return framebufferTextures[idx]->getImageData();// .image;
 }
 
 VkRenderPass Draw::DrawDifferedFramebuffer::getRenderPass(void) const {

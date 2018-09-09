@@ -19,7 +19,7 @@ namespace Draw {
 			const VkImageViewCreateInfo &viewInfo);
 		~Texture();
 
-		void generateMipLevels(void) = delete;
+		[[deprecated("not realize fo now")]] void generateMipLevels(void) = delete;
 		void transitionLayout(VkImageLayout targetImageLayout,
 			VkAccessFlags srcAccess, VkAccessFlags dstAccess,
 			VkPipelineStageFlags srcStageMack, VkPipelineStageFlags dstStageMack);

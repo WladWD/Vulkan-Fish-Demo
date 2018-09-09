@@ -10,6 +10,10 @@ DrawDiffered::DrawDifferedManager::DrawDifferedManager(
 	drawDiffered[Draw::DrawDataTypes::DrawDataDiffuse] = std::make_unique<DrawDifferedDiffuse>(vulkanData, vulkanEngineData, model, assetLoader, framebuffer);
 }
 
+const std::shared_ptr<Draw::DrawDifferedFramebuffer>& DrawDiffered::DrawDifferedManager::getFramebuffer(void) const {
+	return framebuffer;
+}
+
 void DrawDiffered::DrawDifferedManager::draw(VkCommandBuffer commandBuffer) {
 	std::array<VkClearValue, 4> mClearValue;
 	mClearValue[0].color = { 1.0f, 0.0f, 1.0f, 1.0f };
@@ -42,24 +46,24 @@ void DrawDiffered::DrawDifferedManager::draw(VkCommandBuffer commandBuffer) {
 
 
 
-	VkImageBlit imageBlit = {};
-	imageBlit.srcOffsets[0] = { 0, 0, 0 };
-	imageBlit.srcOffsets[1] = { (int32_t)framebuffer->getFramebufferSize().width,  (int32_t)framebuffer->getFramebufferSize().height, 1 };
-	imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	imageBlit.srcSubresource.baseArrayLayer = 0;
-	imageBlit.srcSubresource.layerCount = 1;
-	imageBlit.srcSubresource.mipLevel = 0;
+	//VkImageBlit imageBlit = {};
+	//imageBlit.srcOffsets[0] = { 0, 0, 0 };
+	//imageBlit.srcOffsets[1] = { (int32_t)framebuffer->getFramebufferSize().width,  (int32_t)framebuffer->getFramebufferSize().height, 1 };
+	//imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	//imageBlit.srcSubresource.baseArrayLayer = 0;
+	//imageBlit.srcSubresource.layerCount = 1;
+	//imageBlit.srcSubresource.mipLevel = 0;
 
-	imageBlit.dstOffsets[0] = { 0, 0, 0 };
-	imageBlit.dstOffsets[1] = imageBlit.srcOffsets[1];
-	imageBlit.dstSubresource.aspectMask = imageBlit.srcSubresource.aspectMask;
-	imageBlit.dstSubresource.baseArrayLayer = imageBlit.srcSubresource.baseArrayLayer;
-	imageBlit.dstSubresource.layerCount = imageBlit.srcSubresource.layerCount;
-	imageBlit.dstSubresource.mipLevel = 0;
+	//imageBlit.dstOffsets[0] = { 0, 0, 0 };
+	//imageBlit.dstOffsets[1] = imageBlit.srcOffsets[1];
+	//imageBlit.dstSubresource.aspectMask = imageBlit.srcSubresource.aspectMask;
+	//imageBlit.dstSubresource.baseArrayLayer = imageBlit.srcSubresource.baseArrayLayer;
+	//imageBlit.dstSubresource.layerCount = imageBlit.srcSubresource.layerCount;
+	//imageBlit.dstSubresource.mipLevel = 0;
 
-	vkCmdBlitImage(vulkanData->commandBuffer[vulkanData->mImageIndex],
-		framebuffer->getImageByIndex(1), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		vulkanData->swapchainImage[vulkanData->mImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		1, &imageBlit,
-		VK_FILTER_LINEAR);
+	//vkCmdBlitImage(vulkanData->commandBuffer[vulkanData->mImageIndex],
+	//	framebuffer->getImageByIndex(1), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+	//	vulkanData->swapchainImage[vulkanData->mImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	//	1, &imageBlit,
+	//	VK_FILTER_LINEAR);
 }

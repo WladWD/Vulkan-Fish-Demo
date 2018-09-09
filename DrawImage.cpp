@@ -26,7 +26,8 @@ Engine::DrawImage::~DrawImage() {
 	vkDestroyPipeline(vulkanData->device, drawImagePipeline, nullptr);
 }
 
-void Engine::DrawImage::initialize(const Asset::AssetLoader *assetLoader) {
+void Engine::DrawImage::initialize(const Asset::AssetLoader *assetLoader, const ImageManager::ImageData &drawSourceImage) {
+	this->drawSourceImage = drawSourceImage;
 	//loadImage("Resources\\Images\\bricks2.dds", assetLoader, sourceImage, imageMemory, sourceImageView, sourceExtent);
 	loadImage("Resources\\Images\\bricks2_normal.dds", assetLoader, nomalSourceImage, nomalImageMemory, nomalSourceImageView, nomalSourceExtent);
 	loadImage("Resources\\Images\\bricks2_disp.dds", assetLoader, depthSourceImage, depthImageMemory, depthSourceImageView, depthSourceExtent);
@@ -34,7 +35,7 @@ void Engine::DrawImage::initialize(const Asset::AssetLoader *assetLoader) {
 	//auto ptr = new Shader::DrawDifferedDiffuseShaderPipeline(assetLoader, vulkanData);
 
 	vulkanEngineData->imageContainer->addImage("Resources\\Images\\initialize.dds");
-	sourceImage = vulkanEngineData->imageContainer->getImageDataByName(std::string("Resources\\Images\\initialize.dds"));
+	this->sourceImage = vulkanEngineData->imageContainer->getImageDataByName(std::string("Resources\\Images\\initialize.dds"));
 	/*sourceImage = val.image;
 	imageMemory = val.imageMemory;
 	sourceImageView = val.imageView;
@@ -268,8 +269,8 @@ void Engine::DrawImage::initializeIndexBuffer(void) {
 void Engine::DrawImage::updateDescriptorSet(void) {
 	VkDescriptorImageInfo imageInfo = {};
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = sourceImage.imageView;
-	imageInfo.sampler = vulkanEngineData->samplers->getMinMaxMag_Linear_UVW_Wrap(0, sourceImage.levelCount - 1);
+	imageInfo.imageView = this->drawSourceImage.imageView;//sourceImage.imageView;
+	imageInfo.sampler = vulkanEngineData->samplers->getMinMaxMag_Linear_UVW_Wrap(0, 0);// this->drawSourceImage.levelCount - 1);//sourceImage.levelCount - 1);
 
 	VkDescriptorImageInfo imageNormalInfo = {};
 	imageNormalInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

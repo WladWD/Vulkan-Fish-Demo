@@ -1,33 +1,20 @@
-#include "LoadDiffuseMesh.h"
-#include "VulkanEngineData.h"
+#include "LoadFormattedModel.h"
+#include "LoadMeshAssimp.h"
 
 #ifdef USE_ASSIMP
 #pragma once
 namespace LoadManager {
-	class LoadModelAssimp {
-		const VulkanEngineApplication::VulkanData * vulkanData;
-
+	class LoadModelAssimp: public LoadFormattedModel {
 		std::unique_ptr<LoadManager::MaterialLoader> materialLoader;
-		std::shared_ptr<ImageManager::ImageLoader> imageLoader;
-		std::vector<std::unique_ptr<LoadMesh>> loadMesh;
 
-		VkBuffer vertexBuffer, indexBuffer;
-		VkDeviceMemory vertexBufferMemory, indexBufferMemory;
-
-		std::shared_ptr<Draw::Model> scene;
-
-		VkDeviceSize packVertexBuffer(void);
-		VkDeviceSize packIndexBuffer(void);
 	public:
 		LoadModelAssimp(const Asset::AssetLoader * assetLoader,
 			const VulkanEngineApplication::VulkanData * vulkanData,
 			const VulkanEngineApplication::VulkanEngineData *vulkanEngineData,
 			const std::shared_ptr<Draw::Model> &scene);
-		~LoadModelAssimp() = default;
+		virtual ~LoadModelAssimp() = default;
 
-		void addModel(std::string model);
-		void packScene(void);
-		const std::shared_ptr<Draw::Model> &getLoadedScene(void);
+		virtual void addModel(const std::string &model) override;
 	};
 }
 #endif

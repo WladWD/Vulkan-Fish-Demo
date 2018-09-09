@@ -17,6 +17,7 @@ namespace DrawDiffered {
 			const Asset::AssetLoader *assetLoader);
 		~DrawDifferedManager() = default;
 
+		const std::shared_ptr<Draw::DrawDifferedFramebuffer> &getFramebuffer(void) const;
 		void draw(VkCommandBuffer commandBuffer);
 	};
 }

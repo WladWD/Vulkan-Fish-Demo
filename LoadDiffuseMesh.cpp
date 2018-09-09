@@ -4,9 +4,7 @@
 LoadManager::LoadDiffuseMesh::LoadDiffuseMesh(
 	const std::shared_ptr<ImageManager::ImageLoader>& imageLoader,
 	const std::shared_ptr<Draw::Model>& scene):
-	LoadMesh(imageLoader, scene, Draw::DrawDataTypes::DrawDataDiffuse) {
-
-}
+	LoadMeshAssimp(imageLoader, scene, Draw::DrawDataTypes::DrawDataDiffuse) { }
 
 void LoadManager::LoadDiffuseMesh::addVertexToBuffer(const aiMesh * paiMesh) {
 	Draw::Vertex vertex;
@@ -44,15 +42,15 @@ void LoadManager::LoadDiffuseMesh::addModel(const aiScene * pScene) {
 
 			scene->drawData[loadDrawType].drawDataName = paiMesh->mName.C_Str();
 			scene->drawData[loadDrawType].materialIdx.push_back(paiMesh->mMaterialIndex);
-			scene->drawData[loadDrawType].firstIndex.push_back(LoadManager::LoadMesh::startIndex);
-			scene->drawData[loadDrawType].vertexOffset.push_back(LoadManager::LoadMesh::startVertex);
+			scene->drawData[loadDrawType].firstIndex.push_back(LoadManager::LoadMeshAssimp::startIndex);
+			scene->drawData[loadDrawType].vertexOffset.push_back(LoadManager::LoadMeshAssimp::startVertex);
 			scene->drawData[loadDrawType].indexCount.push_back(paiMesh->mNumFaces * 3);
 
 			addVertexToBuffer(paiMesh);
 			addIndexToBuffer(paiMesh);
 
-			LoadManager::LoadMesh::startVertex += paiMesh->mNumVertices;
-			LoadManager::LoadMesh::startIndex += paiMesh->mNumFaces * 3;
+			LoadManager::LoadMeshAssimp::startVertex += paiMesh->mNumVertices;
+			LoadManager::LoadMeshAssimp::startIndex += paiMesh->mNumFaces * 3;
 		}
 	}
 }

@@ -10,7 +10,10 @@ namespace Store {
 		StoreScene(const VulkanEngineApplication::VulkanEngineData *vulkanEngineData);
 		virtual ~StoreScene() = default;
 
-		virtual void store(const std::shared_ptr<Draw::Model> &model, const std::string &fileName) = 0;
+		virtual void store(
+			const VulkanEngineApplication::VulkanData * vulkanData, 
+			const std::shared_ptr<Draw::Model> &model,
+			const std::string &fileName) = 0;
 	};
 }
 

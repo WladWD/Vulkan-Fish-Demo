@@ -26,7 +26,7 @@ namespace Draw {
 		//TODO add resize
 
 		uint32_t getFramebufferColorAttachmentCount(void) const;
-		VkImage getImageByIndex(uint32_t idx) const;
+		const ImageManager::ImageData &getImageByIndex(uint32_t idx) const;
 		VkRenderPass getRenderPass(void) const;
 		VkFramebuffer getFramebuffer(void) const;
 		VkExtent3D getFramebufferSize(void) const;

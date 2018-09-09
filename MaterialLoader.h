@@ -2,6 +2,7 @@
 #include "ImageContainer.h"
 #include <map>
 
+#ifdef USE_ASSIMP
 #pragma once
 namespace LoadManager {
 	class MaterialLoader {
@@ -18,4 +19,5 @@ namespace LoadManager {
 		void addMaterials(const aiScene* pScene, std::string sourcePath);
 	};
 }
+#endif
 

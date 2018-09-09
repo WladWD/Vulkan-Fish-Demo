@@ -1,10 +1,11 @@
 #include "LoadModelAssimp.h"
+#include "LoadModelNative.h"
 
 #pragma once
 namespace LoadManager {
 	class LoadModelManager {
 		//Use abstract base class #ifdef USE_ASSIMP
-		std::unique_ptr<LoadModelAssimp> loadModel;
+		std::unique_ptr<LoadModel> loadModel;
 		std::shared_ptr<Draw::Model> scene;
 		
 	public:

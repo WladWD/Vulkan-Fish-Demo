@@ -78,5 +78,6 @@ void main() {
 
 	//vec3 norm = getNormal(fragCoord);
 	//norm = norm * 0.5 + 0.5;
-	g_FragmentResultColor = texture(texSampler, fragCoord) * push_constants.lightColor * colorize(fPosition, getNormal(fragCoord), push_constants.lightPosition);
+	g_FragmentResultColor = //texture(texSampler, fragTexCoord);
+	texture(texSampler, vec2(fragCoord.x, 1.0 - fragCoord.y)) * push_constants.lightColor * colorize(fPosition, getNormal(fragCoord), push_constants.lightPosition);
 }

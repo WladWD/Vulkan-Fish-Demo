@@ -1,5 +1,6 @@
 #include "MaterialLoader.h"
 
+#ifdef USE_ASSIMP
 LoadManager::MaterialLoader::MaterialLoader(ImageManager::ImageContainer *imageContainer): 
 	imageContainer(imageContainer) { }
 
@@ -83,3 +84,4 @@ void LoadManager::MaterialLoader::addMaterials(const aiScene * pScene, std::stri
 		loadMaterialTextures(pMaterial, i, sourcePath);
 	}
 }
+#endif

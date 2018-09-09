@@ -1,10 +1,8 @@
 #include "VulkanHeader.h"
 
 #pragma once
-namespace Asset 
-{
-	class AssetLoader
-	{
+namespace Asset  {
+	class AssetLoader {
 	public:
 		AssetLoader() = default;
 		virtual ~AssetLoader() = default;

@@ -5,9 +5,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-//#define JNIEnv unsigned char
-//#define jobject int
-
 #else 
 //Android Init
 
@@ -28,10 +25,12 @@
 
 #ifdef _WIN32
 
-#define USE_ASSIMP
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+//#define USE_ASSIMP
+#ifdef USE_ASSIMP
+	#include <assimp/Importer.hpp>
+	#include <assimp/scene.h>
+	#include <assimp/postprocess.h>
+#endif
 
 #endif
 /////////////////////////////////////////////////////////////////////
